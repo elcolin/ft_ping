@@ -87,6 +87,9 @@ https://datatracker.ietf.org/doc/html/rfc791
 #define ICMP_SEQUENCE_NUMBER 1
 
 void    triggerError(int condition, char *msg);
+int defineICMPHeader();
+uint16_t computeChecksum(uint8_t *addr, int count);
+int initSocketFd();
 
 
 #endif
