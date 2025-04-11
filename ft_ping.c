@@ -12,43 +12,39 @@ void triggerError(int condition, char *msg)
 int initSocketFd()
 {
     struct protoent *proto = getprotobyname("icmp");
-    triggerError(!proto, "getprotobyname() failed");
+    if (proto == NULL)
+        return -1;
 
     int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    triggerError(sockfd < 0, "socket() failed");
     printf("socket created\n");
     return sockfd;
 }
 
 uint16_t computeChecksum(uint8_t *addr, int count)
 {
-/* Compute Internet Checksum for "count" bytes
-* beginning at location "addr".
-*/
-    uint16_t checksum;
-    register uint32_t sum = 0;
-    while( count > 1 ) {
-    /* This is the inner loop */
-    sum += *(addr++);
-    count -= 2;
+    uint32_t sum = 0;
+    uint16_t *ptr = (uint16_t *) addr;
+
+    while (count > 1) {
+        sum += *ptr++;
+        count -= 2;
     }
-    /* Add left-over byte, if any */
-    if( count > 0 )
-    sum += * (uint8_t *) addr;
-    /* Fold 32-bit sum to 16 bits */
-    while (sum>>16)
-    sum = (sum & 0xffff) + (sum >> 16);
-    checksum = ~sum;
-    return checksum;
+    if (count > 0) {
+        sum += *((uint8_t *)ptr);
+    }
+    while (sum >> 16) {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+    return (uint16_t)(~sum);
 }
 
-int defineICMPHeader()
+int defineICMPHeader(t_ping *ping)
 {
-    struct icmp icmpHeader;
-    icmpHeader.icmp_type = ICMP_ECHO;
-    icmpHeader.icmp_code = ICMP_CODE;
-    icmpHeader.icmp_id = getpid() & 0xFFFF;
-    icmpHeader.icmp_seq = ICMP_SEQUENCE_NUMBER;
-    icmpHeader.icmp_cksum = computeChecksum((uint8_t *) &icmpHeader, sizeof(icmpHeader));
+    memset(&ping->icmpHeader.checksum, 0, sizeof(ping->icmpHeader.checksum));
+    ping->icmpHeader.type = ICMP_ECHO;
+    ping->icmpHeader.code = ICMP_CODE;
+    ping->icmpHeader.un.echo.id = htons(getpid() & 0xFFFF);
+    ping->icmpHeader.un.echo.sequence = ping->icmpHeader.un.echo.sequence + 1;
+    ping->icmpHeader.checksum = computeChecksum((uint8_t *) &ping->icmpHeader, sizeof(struct icmphdr));
     return 0;
 }

@@ -1,23 +1,48 @@
 #include "ft_ping.h"
 
-struct sockaddr_in destAddress;
-struct sockaddr_in srcAddress;
 
-
+void closeRessources(t_ping *ping)
+{
+    if (ping->sockfd > 0)
+        close(ping->sockfd);   
+}
 
 int main(int argc, char **argv)
 {   
-    struct timeval tv;
-    (void) tv;
+    t_ping ping;
+
     triggerError(argc != 2, "Usage: ft_ping <destAddress>\n");
     
     printf("pinging %s\n", argv[1]);
-    destAddress.sin_family = AF_INET;
-    triggerError(inet_pton(PF_INET, argv[1], &destAddress) != 1, "malloc() failed\n");
 
-    int sockfd = initSocketFd();
-    (void) sockfd;
+    // Setting up the destination address
+    memset(&ping.destAddress, 0, sizeof(ping.destAddress));
+    ping.destAddress.sin_family = AF_INET;
+    triggerError(inet_pton(PF_INET, argv[1], &ping.destAddress.sin_addr) != 1, "inet_pton failed\n");
 
+    // Setting up the raw socket
+    ping.sockfd = initSocketFd();
+    triggerError(ping.sockfd < 0, "socket() failed\n");
+
+    // Setting up the ICMP header
+    memset(&ping.icmpHeader, 0, sizeof(struct icmphdr));
+
+    char buffer[1024] = {0};
+    struct timeval start, end;
+    long rtt_microseconds = 0;
+    
+    while(ping.icmpHeader.un.echo.sequence < UINT16_MAX)
+    {
+        triggerError(defineICMPHeader(&ping) != 0, "defineICMPHeader() failed\n");
+        gettimeofday(&start, NULL);
+        sendto(ping.sockfd, (void *)&ping.icmpHeader, sizeof(ping.icmpHeader), 0, (struct sockaddr *)&ping.destAddress, sizeof(ping.destAddress));
+        recvfrom(ping.sockfd, buffer, sizeof(buffer), 0, NULL, NULL);
+        gettimeofday(&end, NULL);
+        rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+        printf("time=%.3f ms\n", rtt_microseconds / 1000.0);
+        sleep(1);
+    }
+    close(ping.sockfd);
     return 0;
 }
 // int defineIPHeader()
@@ -51,5 +76,5 @@ int main(int argc, char **argv)
     //     }
     //     idx = idx->ifa_next;
     // }
-    // defineIPHeader();
     // freeifaddrs(ifap);
+    // defineIPHeader();

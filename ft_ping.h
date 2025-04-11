@@ -25,6 +25,13 @@
 
 typedef uint8_t byte;
 
+typedef struct s_ping
+{
+    struct sockaddr_in  destAddress;
+    int                 sockfd;
+    struct icmphdr      icmpHeader;
+} t_ping;
+
 /*
                     -- Internet Protocol Header --
 
@@ -45,26 +52,7 @@ typedef uint8_t byte;
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 https://datatracker.ietf.org/doc/html/rfc791
-
 */
-// Values of the different fields in the IP header for ICMP packets
-// Version
-#define IP_ICMP_VERSION 4
-// Type of Service
-#define IP_ICMP_TOS 0
-// Protocol
-#define IP_ICMP_PROTOCOL 1
-// Header length
-#define IP_ICMP_HEADER_LENGTH 5
-// Total length
-#define IP_ICMP_TOTAL_LENGTH 28
-// Identification
-#define IP_ICMP_ID 0
-// Flags
-#define IP_ICMP_FLAGS 0
-// Time to live
-#define IP_ICMP_TTL 64
-
 /*
                         -- ICMP Header --
     0                   1                   2                   3
@@ -86,10 +74,10 @@ https://datatracker.ietf.org/doc/html/rfc791
 #define ICMP_CODE 0
 #define ICMP_SEQUENCE_NUMBER 1
 
-void    triggerError(int condition, char *msg);
-int defineICMPHeader();
+void     triggerError(int condition, char *msg);
+int      defineICMPHeader(t_ping *ping);
 uint16_t computeChecksum(uint8_t *addr, int count);
-int initSocketFd();
+int      initSocketFd();
 
 
 #endif
