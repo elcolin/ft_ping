@@ -22,15 +22,29 @@
 #include <string.h>
 // getpid
 #include <unistd.h>
+// CTRL-C handling
+#include <signal.h>
 
-typedef uint8_t byte;
 
 typedef struct s_ping
 {
-    struct sockaddr_in  destAddress;
-    int                 sockfd;
-    struct icmphdr      icmpHeader;
+   struct sockaddr_in   destAddress;
+   int                  sockfd;
+   struct icmphdr       icmpHeader;
+   u_int16_t            sequenceNumber;
 } t_ping;
+
+typedef struct s_rtt
+{
+   struct timeval start;
+   struct timeval end;
+   double         rtt_min;
+   double         rtt_max;
+   double         rtt_sum;
+   double         rtt_avg;
+   double         rtt_mdev;
+   size_t         rtt_count;
+} t_rtt;
 
 /*
                     -- Internet Protocol Header --
@@ -72,10 +86,9 @@ https://datatracker.ietf.org/doc/html/rfc791
 
 // Values of the different fields in the ICMP header for echo request
 #define ICMP_CODE 0
-#define ICMP_SEQUENCE_NUMBER 1
 
 void     triggerError(int condition, char *msg);
-int      defineICMPHeader(t_ping *ping);
+void     defineICMPHeader(t_ping *ping);
 uint16_t computeChecksum(uint8_t *addr, int count);
 int      initSocketFd();
 

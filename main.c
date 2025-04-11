@@ -1,5 +1,6 @@
 #include "ft_ping.h"
 
+volatile sig_atomic_t g_exit = 0;
 
 void closeRessources(t_ping *ping)
 {
@@ -7,22 +8,59 @@ void closeRessources(t_ping *ping)
         close(ping->sockfd);   
 }
 
-int main(int argc, char **argv)
-{   
-    t_ping ping;
+void triggerError(int condition, char *msg)
+{
+    if (condition)
+    {
+        perror(msg);
+        g_exit = 1;
+    }
+}
 
-    triggerError(argc != 2, "Usage: ft_ping <destAddress>\n");
+void handlesigint(int sig)
+{
+    g_exit = 1;
+    (void)sig;
+    //printf("\n--- ft_ping statistics ---\n");
+    //printf("%d packets transmitted, %d packets received, %.1f%% packet loss\n",
+    //    g_sent, g_received, g_sent == 0 ? 0.0 : ((g_sent - g_received) * 100.0 / g_sent));
+    //exit(0);
+}
+
+int main(int argc, char **argv)
+{
+    t_ping ping;
+    size_t pkg_sent = 0;
+    size_t pkg_received = 0;
+    if (argc != 2)
+    {
+        fprintf(stderr, "Usage: %s <IP address>\n", argv[0]);
+        return 1;
+    }
+    if(signal(SIGINT, handlesigint) == SIG_ERR)
+    {
+        perror("signal failed");
+        return 1;
+    }
     
     printf("pinging %s\n", argv[1]);
 
     // Setting up the destination address
     memset(&ping.destAddress, 0, sizeof(ping.destAddress));
     ping.destAddress.sin_family = AF_INET;
-    triggerError(inet_pton(PF_INET, argv[1], &ping.destAddress.sin_addr) != 1, "inet_pton failed\n");
+    if(inet_pton(PF_INET, argv[1], &ping.destAddress.sin_addr) != 1)
+    {
+        perror("inet_pton failed");
+        return 1;
+    }
 
     // Setting up the raw socket
     ping.sockfd = initSocketFd();
-    triggerError(ping.sockfd < 0, "socket() failed\n");
+    if (ping.sockfd < 0)
+    {
+        perror("socket failed");
+        return 1;
+    }
 
     // Setting up the ICMP header
     memset(&ping.icmpHeader, 0, sizeof(struct icmphdr));
@@ -30,51 +68,39 @@ int main(int argc, char **argv)
     char buffer[1024] = {0};
     struct timeval start, end;
     long rtt_microseconds = 0;
-    
-    while(ping.icmpHeader.un.echo.sequence < UINT16_MAX)
+    ping.sequenceNumber = 0;
+
+    while(ping.sequenceNumber < UINT16_MAX && !g_exit)
     {
-        triggerError(defineICMPHeader(&ping) != 0, "defineICMPHeader() failed\n");
-        gettimeofday(&start, NULL);
-        sendto(ping.sockfd, (void *)&ping.icmpHeader, sizeof(ping.icmpHeader), 0, (struct sockaddr *)&ping.destAddress, sizeof(ping.destAddress));
-        recvfrom(ping.sockfd, buffer, sizeof(buffer), 0, NULL, NULL);
-        gettimeofday(&end, NULL);
-        rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-        printf("time=%.3f ms\n", rtt_microseconds / 1000.0);
+        defineICMPHeader(&ping);
         sleep(1);
+        gettimeofday(&start, NULL);
+        if (sendto(ping.sockfd, (void *)&ping.icmpHeader, sizeof(ping.icmpHeader), 0, (struct sockaddr *)&ping.destAddress, sizeof(ping.destAddress)) == -1)
+        {
+            perror("sendto failed");
+            closeRessources(&ping);
+            g_exit = 1;
+            break;
+        }
+        pkg_sent++;
+        if (recvfrom(ping.sockfd, buffer, sizeof(buffer), 0, NULL, NULL) == -1)
+            continue;
+        gettimeofday(&end, NULL);
+        
+        rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+        struct iphdr *ip_header = (struct iphdr *)buffer;
+        struct icmphdr *icmp_header = (struct icmphdr *)(buffer + (ip_header->ihl * 4));
+        if (icmp_header->un.echo.id != ping.icmpHeader.un.echo.id)
+            continue;
+        pkg_received++;
+
+        printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
+               ntohs(ip_header->tot_len) - (ip_header->ihl * 4), argv[1], 
+               ntohs(icmp_header->un.echo.sequence), ip_header->ttl, rtt_microseconds / 1000.0);
     }
+    printf("\n--- ft_ping statistics ---\n");
+    printf("%ld packets transmitted, %ld packets received, %.1f%% packet loss\n",
+        pkg_sent, pkg_received, pkg_sent == 0 ? 0.0 : ((pkg_sent - pkg_received) * 100.0 / pkg_sent));
     close(ping.sockfd);
     return 0;
 }
-// int defineIPHeader()
-// {
-//     struct ip ipHeader;
-//     ipHeader.ip_v = IP_ICMP_VERSION;
-//     ipHeader.ip_hl = IP_ICMP_HEADER_LENGTH;
-//     ipHeader.ip_tos = IP_ICMP_TOS;
-//     ipHeader.ip_len = IP_ICMP_TOTAL_LENGTH;
-//     ipHeader.ip_id = IP_ICMP_ID;
-//     ipHeader.ip_off = IP_ICMP_FLAGS;
-//     ipHeader.ip_ttl = IP_ICMP_TTL;
-//     ipHeader.ip_p = IP_ICMP_PROTOCOL;
-//     ipHeader.ip_dst = destAddress.sin_addr;
-//     ipHeader.ip_src = srcAddress.sin_addr;
-//     ipHeader.ip_sum = computeChecksum( (uint8_t *) &ipHeader, IP_ICMP_HEADER_LENGTH * 4);
-//     return 0;
-// }
-    // struct ifaddrs *ifap;
-    // triggerError(getifaddrs(&ifap) == -1, "getifaddrs() failed\n");
-
-    // struct ifaddrs *idx = ifap;
-    // while (idx)
-    // {
-    //     //printf("interface name: %s\n", idx->ifa_name);
-    //     if (idx->ifa_addr->sa_family == AF_INET && strcmp(idx->ifa_name, "en0") == 0)
-    //     {
-    //         srcAddress = *(struct sockaddr_in *)idx->ifa_addr;
-    //         //printf("ip address: %s\n", inet_ntoa(addr->sin_addr));
-    //         break;
-    //     }
-    //     idx = idx->ifa_next;
-    // }
-    // freeifaddrs(ifap);
-    // defineIPHeader();
