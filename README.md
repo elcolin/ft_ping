@@ -44,7 +44,7 @@ https://www.geeksforgeeks.org/c-c-program-to-implement-checksum/
 
 TODO :
    Free packet
-   -V -? option
+   -v -? option
    Review Makefile 
    domain resolution V
    utiliser select V

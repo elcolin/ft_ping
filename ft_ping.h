@@ -46,9 +46,19 @@ typedef struct s_rtt
    double         rtt_sum;
    double         rtt_avg;
    double         rtt_mdev;
-   size_t         rtt_count;
 } t_rtt;
 
+typedef enum
+{
+   FALSE,
+   TRUE
+}  bool;
+
+typedef enum
+{
+   SUCCESS,
+   FAILURE
+}  status;
 /*
                     -- Internet Protocol Header --
 
