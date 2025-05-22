@@ -51,47 +51,49 @@ bool checkVerboseArguments(int argc, char **argv)
     if(signal(SIGINT, handlesigint) == SIG_ERR)
     {
         perror("signal failed");
-        EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     if (argc == 3 && strcmp(argv[1], "-v") == 0)
         return TRUE;
     else if (argc != 2)
     {
         fprintf(stderr, "Usage: %s <IP address>\n", argv[0]);
-        EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     return FALSE;
 }
 
+void setDestinationAddress(struct sockaddr_in *destAddress, char *ip_address)
+{
+    memset(destAddress, 0, sizeof(*destAddress));
+    destAddress->sin_family = AF_INET;
+    if(inet_pton(PF_INET, ip_address, &destAddress->sin_addr) != 1 && resolveFQDN(ip_address, destAddress) < 0)
+    {
+        fprintf(stderr, "Invalid address: %s\n", ip_address);
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, char **argv)
 {
-    size_t              pkg_sent = 0, pkg_received = 0;
-    size_t              isrc = 1;
+    size_t              pkg_sent = 0, pkg_received = 0, isrc = 1;
     int                 sockfd;
+    u_int16_t           sequenceNumber = 0;
     fd_set              readfds;
     char                buffer[1024] = {0};
     long                rtt_microseconds = 0;
-    u_int16_t           sequenceNumber = 0;
-    struct icmphdr      icmph_request;
-    struct iphdr        *iph_reply = NULL;
-    struct icmphdr      *icmph_reply = NULL;
-    struct timeval      start, end, timeout;
     struct sockaddr_in  destAddress;
+    struct icmphdr      icmph_request;
+    struct icmphdr      *icmph_reply = NULL;
+    struct iphdr        *iph_reply = NULL;
+    struct timeval      start, end, timeout;
     t_rtt               rtt;
     bool                is_verbose;
     
-    is_verbose = checkVerboseArguments(argc, argv);
-    isrc = is_verbose == TRUE ? 2 : 1;
     memset(&rtt, 0, sizeof(rtt));
-    memset(&destAddress, 0, sizeof(destAddress));
-    destAddress.sin_family = AF_INET;
-    // Check if the argument is a valid IP address
-    if(inet_pton(PF_INET, argv[isrc], &destAddress.sin_addr) != 1 && resolveFQDN(argv[isrc], &destAddress) < 0)
-    {
-        fprintf(stderr, "Failed to resolve %s\n", argv[isrc]);
-        return 1;
-    }
-    // Setting up the raw socket
+    is_verbose = checkVerboseArguments(argc, argv);
+    isrc = is_verbose == TRUE ? isrc + 1 : isrc;
+    setDestinationAddress(&destAddress, argv[isrc]);
     sockfd = initSocketFd();
     printBeginning(argv[isrc], is_verbose, sockfd, destAddress);
     FD_ZERO(&readfds);
@@ -107,10 +109,7 @@ int main(int argc, char **argv)
         triggerError(sendRequest(sockfd, &destAddress, &icmph_request) < 0, "sendto failed", sockfd);
         ++pkg_sent;
         // Set the timeout for the select function
-        if (pkg_received == 0)
-            timeout.tv_sec = 1;
-        else
-            timeout.tv_usec = JITTER + rtt.rtt_avg;
+        timeout.tv_sec = (pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.rtt_avg, 0);
         while(g_exit == FALSE)
         {
             FD_SET(sockfd, &readfds);

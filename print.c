@@ -19,8 +19,9 @@ void printStatistics(t_rtt *rtt, size_t pkg_sent, size_t pkg_received, char *dom
     printf("\n--- %s ft_ping statistics ---\n", domain);
     printf("%ld packets transmitted, %ld packets received, %.1f%% packet loss\n",
         pkg_sent, pkg_received, pkg_sent == 0 ? 0.0 : ((pkg_sent - pkg_received) * 100.0 / pkg_sent));
-    printf("rtt min/avg/max = %.2f/%.2f/%.2f ms\n",
-        rtt->rtt_min / 1000.0, rtt->rtt_avg / 1000.0, rtt->rtt_max / 1000.0);
+    if (pkg_received != 0)
+        printf("rtt min/avg/max/mdev = %.2f/%.2f/%.2f/%.2f ms\n",
+            rtt->rtt_min / 1000.0, rtt->rtt_avg / 1000.0, rtt->rtt_max / 1000.0, rtt->rtt_mdev / 1000.0);
 }
 
 void printBeginning(char *domain, bool is_verbose, int sockfd, struct sockaddr_in destAddress)

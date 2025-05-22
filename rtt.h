@@ -3,6 +3,8 @@
 
 // size_t
 #include <stdlib.h>
+// fabs
+#include <math.h>
 
 typedef struct s_rtt
 {
@@ -10,6 +12,7 @@ typedef struct s_rtt
    double         rtt_max;
    double         rtt_sum;
    double         rtt_avg;
+   double         rtt_sumdev;
    double         rtt_mdev;
 } t_rtt;
 
