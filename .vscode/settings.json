@@ -4,6 +4,9 @@
         "ft_ping.h": "c",
         "socket.h": "c",
         "types.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "ip_icmp.h": "c",
+        "inet.h": "c",
+        "booleans.h": "c"
     }
 }
