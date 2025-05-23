@@ -49,7 +49,7 @@ int parsePacket(char *buffer, struct iphdr **ip_header, struct icmphdr **icmp_he
     return ntohs((*ip_header)->tot_len);
 }
 
-status handlePackets(struct icmphdr **icmph_reply, struct icmphdr *icmph_request, char *buffer, struct iphdr **iph_reply)
+status getValidPacket(struct icmphdr **icmph_reply, struct icmphdr *icmph_request, char *buffer, struct iphdr **iph_reply)
 {
     int pkg_idx = 0;
     while (comparePackets(*icmph_reply, icmph_request) != SUCCESS && pkg_idx >= 0)

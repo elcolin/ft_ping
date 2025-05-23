@@ -1,7 +1,7 @@
 # Variables
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -g
-SRC = main.c ft_ping.c print.c rtt.c packet.c
+SRC = main.c ft_ping.c print.c rtt.c packet.c socket.c
 OBJ = $(SRC:.c=.o)
 EXEC = ft_ping
 # Rules

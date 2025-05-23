@@ -17,7 +17,7 @@ void handlesigint(int sig)
     (void)sig;
 }
 
-int resolveFQDN(char *fqdn, struct sockaddr_in *addr)
+status resolveFQDN(char *fqdn, struct sockaddr_in *addr)
 {
     struct addrinfo hints;
     struct addrinfo *result;
@@ -27,23 +27,11 @@ int resolveFQDN(char *fqdn, struct sockaddr_in *addr)
     if (getaddrinfo(fqdn, NULL, &hints, &result) != 0)
     {
        perror("getaddrinfo failed");
-       return -1;
+       return FAILURE;
     }
     memcpy(addr, result->ai_addr, sizeof(struct sockaddr_in));
     freeaddrinfo(result);
-    return 0;
-}
-
-int sendRequest(int sockfd, struct sockaddr_in *destAddress, struct icmphdr *icmpHeader)
-{
-    return sendto(sockfd, (void *)icmpHeader, sizeof(struct icmphdr), 0, (struct sockaddr *)destAddress, sizeof(struct sockaddr_in));
-}
-
-int receiveResponse(char *buffer, int sockfd, u_int16_t buffer_size)
-{
-    struct sockaddr_in addr;
-    socklen_t addr_len = sizeof(addr);
-    return recvfrom(sockfd, buffer, buffer_size, 0, (struct sockaddr *)&addr, &addr_len);
+    return SUCCESS;
 }
 
 bool checkVerboseArguments(int argc, char **argv)
@@ -67,12 +55,13 @@ void setDestinationAddress(struct sockaddr_in *destAddress, char *ip_address)
 {
     memset(destAddress, 0, sizeof(*destAddress));
     destAddress->sin_family = AF_INET;
-    if(inet_pton(PF_INET, ip_address, &destAddress->sin_addr) != 1 && resolveFQDN(ip_address, destAddress) < 0)
+    if(inet_pton(PF_INET, ip_address, &destAddress->sin_addr) != 1 && resolveFQDN(ip_address, destAddress) == FAILURE)
     {
         fprintf(stderr, "Invalid address: %s\n", ip_address);
         exit(EXIT_FAILURE);
     }
 }
+
 
 int main(int argc, char **argv)
 {
@@ -80,7 +69,7 @@ int main(int argc, char **argv)
     int                 sockfd;
     u_int16_t           sequenceNumber = 0;
     fd_set              readfds;
-    char                buffer[1024] = {0};
+    char                buffer[1024];
     long                rtt_microseconds = 0;
     struct sockaddr_in  destAddress;
     struct icmphdr      icmph_request;
@@ -95,7 +84,7 @@ int main(int argc, char **argv)
     isrc = is_verbose == TRUE ? isrc + 1 : isrc;
     setDestinationAddress(&destAddress, argv[isrc]);
     sockfd = initSocketFd();
-    printBeginning(argv[isrc], is_verbose, sockfd, destAddress);
+    printBeginning(argv[isrc], is_verbose, sockfd, &destAddress);
     FD_ZERO(&readfds);
     while(sequenceNumber < UINT16_MAX && g_exit == FALSE)
     {
@@ -112,17 +101,15 @@ int main(int argc, char **argv)
         timeout.tv_sec = (pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.rtt_avg, 0);
         while(g_exit == FALSE)
         {
-            FD_SET(sockfd, &readfds);
-            // Waiting for file descriptor to be ready or timeout
-            triggerError(select(sockfd + 1, &readfds, NULL, NULL, &timeout) < 0, "select failed", sockfd);
-            if (timeout.tv_sec == 0 && timeout.tv_usec == 0)
+            // If timeout is reached, breaks the loop and sends the next request
+            if (socketIsReady(sockfd, &readfds, &timeout) == FAILURE)
                 break;
-            FD_CLR(sockfd, &readfds);
             // Receives data from the socket, stores in buffer
             triggerError(receiveResponse(buffer, sockfd, sizeof(buffer)) < 0, "recvfrom failed", sockfd);
+            // Timestamp the end time
             gettimeofday(&end, NULL);
             // If no valid packet is received, continue to next iteration
-            if (handlePackets(&icmph_reply, &icmph_request, buffer, &iph_reply) == FAILURE)
+            if (getValidPacket(&icmph_reply, &icmph_request, buffer, &iph_reply) == FAILURE)
                 continue;
             // Calculate the round-trip time
             rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);

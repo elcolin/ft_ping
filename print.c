@@ -24,12 +24,12 @@ void printStatistics(t_rtt *rtt, size_t pkg_sent, size_t pkg_received, char *dom
             rtt->rtt_min / 1000.0, rtt->rtt_avg / 1000.0, rtt->rtt_max / 1000.0, rtt->rtt_mdev / 1000.0);
 }
 
-void printBeginning(char *domain, bool is_verbose, int sockfd, struct sockaddr_in destAddress)
+void printBeginning(char *domain, bool is_verbose, int sockfd, struct sockaddr_in *destAddress)
 {
     if (is_verbose == TRUE)
     {
         printf("ping: sock4.fd: %d (socktype: SOCK_RAW), hints.ai_family: AF_INET\n\n", sockfd);
         printf("ai->ai_family: AF_INET, ai->ai_canonname: '%s'\n", domain);
     }
-    printf("PING %s (%s) %ld bytes of data\n", domain, inet_ntoa(destAddress.sin_addr), sizeof(struct icmphdr));
+    printf("PING %s (%s) %ld bytes of data\n", domain, inet_ntoa(destAddress->sin_addr), sizeof(struct icmphdr));
 }

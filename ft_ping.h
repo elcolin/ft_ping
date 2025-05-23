@@ -2,13 +2,7 @@
 #define FT_PING_H
 // convert network byte order to host byte order
 #include <arpa/inet.h>
-// socket
-#include <sys/socket.h>
 #include <netdb.h>
-// ip header
-#include <netinet/ip.h>
-// icmp header 
-#include <netinet/ip_icmp.h>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -26,13 +20,12 @@
 #include <signal.h>
 // errno
 #include <errno.h>
-// printf
-#include <stdio.h>
 
 #include "print.h"
 #include "booleans.h"
 #include "rtt.h"
 #include "packet.h"
+#include "socket.h"
 
 #define JITTER 30000
 
