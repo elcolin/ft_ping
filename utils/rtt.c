@@ -1,4 +1,4 @@
-#include "rtt.h"
+#include "inc/rtt.h"
 
 void rttUpdate(t_rtt *rtt, long rtt_microseconds, size_t rtt_count)
 {

@@ -1,24 +1,39 @@
-# Variables
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -g
-SRC = main.c ft_ping.c print.c rtt.c packet.c socket.c
-OBJ = $(SRC:.c=.o)
+CFLAGS = -Wall -Wextra -Werror -I.
+LIB = libftping.a
 EXEC = ft_ping
-# Rules
+SRC = main.c
+
+SRCDIR = utils
+SRCS = $(wildcard $(SRCDIR)/*.c)
+LIBOBJS = $(patsubst $(SRCDIR)/%.c, obj/%.o, $(SRCS))
+
+OBJDIR = obj
+
 all: $(EXEC)
 
-$(EXEC): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+$(EXEC): $(LIB) $(OBJDIR)/main.o
+	$(CC) $(CFLAGS) -o $@ $^ -L. -lftping
 
-%.o: %.c
+$(OBJDIR)/main.o: $(SRC)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(LIB): $(LIBOBJS)
+	ar rcs $(LIB) $(LIBOBJS)
+
+lib: $(LIB)
+
 clean:
-	rm -f $(OBJ)
+	rm -rf $(OBJDIR) $(EXEC)
 
 fclean: clean
-	rm -f $(EXEC)
+	rm -f $(LIB)
 
 re: fclean all
 
-.PHONY: all  clean fclean re
+.PHONY: all clean fclean re lib

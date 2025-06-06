@@ -1,4 +1,4 @@
-#include "packet.h"
+#include "inc/packet.h"
 
 uint16_t computeChecksum(uint8_t *addr, int count)
 {

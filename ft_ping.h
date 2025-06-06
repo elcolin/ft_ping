@@ -1,17 +1,10 @@
 #ifndef FT_PING_H
 #define FT_PING_H
-// convert network byte order to host byte order
-#include <arpa/inet.h>
-#include <netdb.h>
 
 #include <stdlib.h>
 #include <stdint.h>
 // time
 #include <sys/time.h>
-
-// getaddrinfo
-#include <netdb.h>
-#include <sys/types.h>
 
 #include <string.h>
 // getpid
@@ -21,11 +14,12 @@
 // errno
 #include <errno.h>
 
-#include "print.h"
-#include "booleans.h"
-#include "rtt.h"
-#include "packet.h"
-#include "socket.h"
+#include "inc/print.h"
+#include "inc/booleans.h"
+#include "inc/rtt.h"
+#include "inc/packet.h"
+#include "inc/socket.h"
+#include "inc/domain.h"
 
 #define JITTER 30000
 
@@ -68,7 +62,5 @@ https://datatracker.ietf.org/doc/html/rfc791
 */
 
 void     triggerError(int condition, char *msg, int sockfd);
-int      initSocketFd();
-
 
 #endif
