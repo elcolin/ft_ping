@@ -83,6 +83,7 @@ int main(int argc, char **argv)
             ptrPrintReply(iph_reply, icmph_reply, domain, rtt_microseconds);
             ++pkg_received;
             // Update the RTT statistics
+            printf("mdev: %f", calculateMeanDeviation(rtt_microseconds));
             rttUpdate(&rtt, rtt_microseconds, pkg_received);
             break;
         }

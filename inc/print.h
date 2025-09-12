@@ -13,6 +13,7 @@ void printBeginning(char *domain, bool is_verbose, int sockfd, struct sockaddr_i
 void printReplyInfo(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds);
 void printReplyInfoVerbose(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds);
 void printStatistics(t_rtt *rtt, size_t pkg_sent, size_t pkg_received, char *domain);
+double calculateMeanDeviation(double x);
 
 
 #endif

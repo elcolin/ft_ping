@@ -14,6 +14,24 @@ void printReplyInfoVerbose(struct iphdr *ip_header, struct icmphdr *icmp_header,
         ntohs(icmp_header->un.echo.sequence), ntohs(icmp_header->un.echo.id), ip_header->ttl, rtt_microseconds / 1000.0);
 }
 
+double calculateMeanDeviation(double x)
+{
+    static double mean_new = 0;
+    static int n = 0;
+    double mean_old = 0;
+    double mean = 0;
+    mean_new += x;
+    n++;
+    if (n > 1)
+    {
+        mean_old = mean_new;
+        mean_new = mean_old + (x - mean_old) / n;
+        mean = mean + (x - mean_old) * (x - mean_new);
+        mean_new = mean;
+    }
+    return mean_new / (n - 1);
+}
+
 void printStatistics(t_rtt *rtt, size_t pkg_sent, size_t pkg_received, char *domain)
 {
     printf("\n--- %s ft_ping statistics ---\n", domain);
