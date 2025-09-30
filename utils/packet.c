@@ -1,5 +1,8 @@
 #include "inc/packet.h"
 
+// TODO Remove
+#include <stdio.h>
+
 uint16_t computeChecksum(uint8_t *addr, int count)
 {
     uint32_t sum = 0;
@@ -53,8 +56,10 @@ status getValidPacket(struct icmphdr **icmph_reply, struct icmphdr *icmph_reques
 {
     int pkg_idx = 0;
     while (comparePackets(*icmph_reply, icmph_request) != SUCCESS && pkg_idx >= 0)
+    {
         // Loop until we find a valid packet
         pkg_idx = parsePacket(&(buffer[pkg_idx]), iph_reply, icmph_reply);
+    }
     // If pkg_idx < 0, it means we didn't find a valid packet
     if (pkg_idx < 0)
         return FAILURE;

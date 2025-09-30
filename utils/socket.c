@@ -33,7 +33,6 @@ int receiveResponse(char *buffer, int sockfd, u_int16_t buffer_size)
 status socketIsReady(int sockfd, fd_set *readfds, struct timeval *timeout)
 {
     FD_SET(sockfd, readfds);
-    //triggerError(select(sockfd + 1, readfds, NULL, NULL, timeout) < 0, "select failed", sockfd);
     if (select(sockfd + 1, readfds, NULL, NULL, timeout) < 0)
     {
         perror("select failed");

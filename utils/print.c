@@ -9,37 +9,19 @@ void printReplyInfo(struct iphdr *ip_header, struct icmphdr *icmp_header, char *
 
 void printReplyInfoVerbose(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds)
 {
-    printf("%d bytes from %s: icmp_seq=%d ident=%d ttl=%d time=%.2f ms\n",
+    printf("%d bytes from %s: icmp_seq=%d ident=%d ttl=%d time=%.3f ms\n",
         ntohs(ip_header->tot_len) - (ip_header->ihl * 4), ip_address,
         ntohs(icmp_header->un.echo.sequence), ntohs(icmp_header->un.echo.id), ip_header->ttl, rtt_microseconds / 1000.0);
 }
 
-double calculateMeanDeviation(double x)
-{
-    static double mean_new = 0;
-    static int n = 0;
-    double mean_old = 0;
-    double mean = 0;
-    mean_new += x;
-    n++;
-    if (n > 1)
-    {
-        mean_old = mean_new;
-        mean_new = mean_old + (x - mean_old) / n;
-        mean = mean + (x - mean_old) * (x - mean_new);
-        mean_new = mean;
-    }
-    return mean_new / (n - 1);
-}
-
-void printStatistics(t_rtt *rtt, size_t pkg_sent, size_t pkg_received, char *domain)
+void  printStatistics(t_rtt *rtt, char *domain)
 {
     printf("\n--- %s ft_ping statistics ---\n", domain);
     printf("%ld packets transmitted, %ld packets received, %.1f%% packet loss\n",
-        pkg_sent, pkg_received, pkg_sent == 0 ? 0.0 : ((pkg_sent - pkg_received) * 100.0 / pkg_sent));
-    if (pkg_received != 0)
-        printf("rtt min/avg/max/mdev = %.2f/%.2f/%.2f/%.2f ms\n",
-            rtt->rtt_min / 1000.0, rtt->rtt_avg / 1000.0, rtt->rtt_max / 1000.0, rtt->rtt_mdev / 1000.0);
+        rtt->pkg_sent, rtt->pkg_received, rtt->pkg_sent == 0 ? 0.0 : ((rtt->pkg_sent - rtt->pkg_received) * 100.0 / rtt->pkg_sent));
+    if (rtt->pkg_received != 0)
+        printf("rtt min/avg/max/mdev = %.2f/%.3f/%.2f/%.3f ms\n",
+            rtt->min / 1000.0, rtt->mean / 1000.0, rtt->max / 1000.0, rtt->mdev / 1000);
 }
 
 void printBeginning(char *domain, bool is_verbose, int sockfd, struct sockaddr_in *destAddress)

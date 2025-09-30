@@ -3,19 +3,23 @@
 
 // size_t
 #include <stdlib.h>
-// fabs
+// fabs, sqrt
 #include <math.h>
 
 typedef struct s_rtt
 {
-   double         rtt_min;
-   double         rtt_max;
-   double         rtt_sum;
-   double         rtt_avg;
-   double         rtt_sumdev;
-   double         rtt_mdev;
+   double   min;
+   double   max;
+   
+   size_t   pkg_received;
+   size_t   pkg_sent;
+   double   mdev;
+   double   mean;
+   double   M2;
 } t_rtt;
 
-void rttUpdate(t_rtt *rtt, long rtt_microseconds, size_t rtt_count);
+void rttUpdate(t_rtt *rtt, long rtt_microseconds);
+void finalizeMeanDeviation(t_rtt *rtt);
+void updateMeanDeviation(t_rtt *rtt, double rtt_microseconds);
 
 #endif

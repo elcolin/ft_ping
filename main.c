@@ -19,13 +19,13 @@ void handlesigint(int sig)
 
 int main(int argc, char **argv)
 {
-    size_t              pkg_sent = 0, pkg_received = 0;
     int                 sockfd;
     u_int16_t           sequenceNumber = 0;
     fd_set              readfds;
     char                buffer[1024];
     char                *domain = NULL;
     long                rtt_microseconds = 0;
+    double              rtt_milliseconds = 0;
     struct sockaddr_in  destAddress;
     struct icmphdr      icmph_request;
     struct icmphdr      *icmph_reply = NULL;
@@ -62,9 +62,9 @@ int main(int argc, char **argv)
         gettimeofday(&start, NULL);
         // Send the ICMP request
         triggerError(sendRequest(sockfd, &destAddress, &icmph_request) < 0, "sendto failed", sockfd);
-        ++pkg_sent;
+        ++rtt.pkg_sent;
         // Set the timeout for the select function
-        timeout.tv_sec = (pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.rtt_avg, 0);
+        timeout.tv_sec = (rtt.pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.mean, 0);
         while(g_exit == FALSE)
         {
             // If timeout is reached, breaks the loop and sends the next request
@@ -79,17 +79,19 @@ int main(int argc, char **argv)
                 continue;
             // Calculate the round-trip time
             rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+            (void) rtt_milliseconds;// =  rtt_microseconds / 1000;
             // Print the reply information
             ptrPrintReply(iph_reply, icmph_reply, domain, rtt_microseconds);
-            ++pkg_received;
+            ++rtt.pkg_received;
             // Update the RTT statistics
-            printf("mdev: %f", calculateMeanDeviation(rtt_microseconds));
-            rttUpdate(&rtt, rtt_microseconds, pkg_received);
+            updateMeanDeviation(&rtt, (double) rtt_microseconds);
+            rttUpdate(&rtt, rtt_microseconds);
             break;
         }
         sleep(1);
     }
-    printStatistics(&rtt, pkg_sent, pkg_received, domain);
+    finalizeMeanDeviation(&rtt);
+    printStatistics(&rtt, domain);
     close(sockfd);
     return 0;
 }

@@ -1,13 +1,25 @@
 #include "inc/rtt.h"
 
-void rttUpdate(t_rtt *rtt, long rtt_microseconds, size_t rtt_count)
+// TO DO REMOVE
+#include <stdio.h>
+
+void rttUpdate(t_rtt *rtt, long rtt_microseconds)
 {
-    rtt->rtt_sumdev += fabs(rtt_microseconds - rtt->rtt_avg);
-    rtt->rtt_sum += rtt_microseconds;
-    if (rtt->rtt_min == 0 || rtt_microseconds < rtt->rtt_min)
-        rtt->rtt_min = rtt_microseconds;
-    if (rtt->rtt_max == 0 || rtt_microseconds > rtt->rtt_max)
-        rtt->rtt_max = rtt_microseconds;
-    rtt->rtt_mdev = rtt->rtt_sumdev / (double) (rtt_count);
-    rtt->rtt_avg = rtt->rtt_sum / (double) (rtt_count);
+    if (rtt->min == 0 || rtt_microseconds < rtt->min)
+        rtt->min = rtt_microseconds;
+    if (rtt->max == 0 || rtt_microseconds > rtt->max)
+        rtt->max = rtt_microseconds;
+}
+
+void updateMeanDeviation(t_rtt *rtt, double rtt_microseconds)
+{
+    double delta = rtt_microseconds - rtt->mean;
+    rtt->mean += (double) delta / (double) rtt->pkg_received;
+    double delta2 = rtt_microseconds - rtt->mean;
+    rtt->M2 += delta * delta2;
+}
+
+void finalizeMeanDeviation(t_rtt *rtt)
+{
+    rtt->mdev = sqrt((double) rtt->M2 / (double) rtt->pkg_received);
 }
