@@ -1,39 +1,39 @@
-# Variables
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -g
-SRC = main.c ft_ping.c
-TEST_SRC = ft_ping.c tests/test_main.c tests/unity.c
-OBJ = $(SRC:.c=.o)
-TEST_OBJ = $(TEST_SRC:.c=.o)
+CFLAGS = -Wall -Wextra -Werror -I.
+LIB = libftping.a
 EXEC = ft_ping
-TEST_EXEC = ft_ping_tests
+SRC = main.c
 
-# Add include paths for tests
-INCLUDES = -I./ -I./tests
+SRCDIR = utils
+SRCS = $(wildcard $(SRCDIR)/*.c)
+LIBOBJS = $(patsubst $(SRCDIR)/%.c, obj/%.o, $(SRCS))
 
-# Rules
+OBJDIR = obj
+
 all: $(EXEC)
 
-$(EXEC): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+$(EXEC): $(LIB) $(OBJDIR)/main.o
+	$(CC) $(CFLAGS) -o $@ $^ -L. -lftping -lm
 
-%.o: %.c
+$(OBJDIR)/main.o: $(SRC)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-tests: $(TEST_EXEC)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -g3 -c $< -o $@
 
-$(TEST_EXEC): $(TEST_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(INCLUDES)
+$(LIB): $(LIBOBJS)
+	ar rcs $(LIB) $(LIBOBJS)
 
-$(TEST_OBJ): %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+lib: $(LIB)
 
 clean:
-	rm -f $(OBJ) $(TEST_OBJ)
+	rm -rf $(OBJDIR) $(EXEC)
 
 fclean: clean
-	rm -f $(EXEC) $(TEST_EXEC)
+	rm -f $(LIB)
 
 re: fclean all
 
-.PHONY: all tests clean fclean re
+.PHONY: all clean fclean re lib

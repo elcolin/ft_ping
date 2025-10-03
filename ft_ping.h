@@ -1,50 +1,27 @@
 #ifndef FT_PING_H
 #define FT_PING_H
-#include <arpa/inet.h>
-// socket
-#include <sys/socket.h>
-#include <stdio.h>
-#include <netdb.h>
-// ip header
-#include <netinet/ip.h>
-// icmp header 
-#include <netinet/ip_icmp.h>
 
 #include <stdlib.h>
 #include <stdint.h>
+// time
 #include <sys/time.h>
-
-// getifaddrs
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <ifaddrs.h>
 
 #include <string.h>
 // getpid
 #include <unistd.h>
 // CTRL-C handling
 #include <signal.h>
+// errno
+#include <errno.h>
 
+#include "inc/print.h"
+#include "inc/utils.h"
+#include "inc/rtt.h"
+#include "inc/packet.h"
+#include "inc/socket.h"
+#include "inc/domain.h"
 
-typedef struct s_ping
-{
-   struct sockaddr_in   destAddress;
-   int                  sockfd;
-   struct icmphdr       icmpHeader;
-   u_int16_t            sequenceNumber;
-} t_ping;
-
-typedef struct s_rtt
-{
-   struct timeval start;
-   struct timeval end;
-   double         rtt_min;
-   double         rtt_max;
-   double         rtt_sum;
-   double         rtt_avg;
-   double         rtt_mdev;
-   size_t         rtt_count;
-} t_rtt;
+#define JITTER 30000
 
 /*
                     -- Internet Protocol Header --
@@ -84,13 +61,6 @@ https://datatracker.ietf.org/doc/html/rfc791
 
 */
 
-// Values of the different fields in the ICMP header for echo request
-#define ICMP_CODE 0
-
-void     triggerError(int condition, char *msg);
-void     defineICMPHeader(t_ping *ping);
-uint16_t computeChecksum(uint8_t *addr, int count);
-int      initSocketFd();
-
+void     triggerError(int condition, char *msg, int sockfd);
 
 #endif

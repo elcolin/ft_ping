@@ -1,106 +1,94 @@
 #include "ft_ping.h"
 
-volatile sig_atomic_t g_exit = 0;
+volatile sig_atomic_t g_exit = FALSE;
 
-void closeRessources(t_ping *ping)
-{
-    if (ping->sockfd > 0)
-        close(ping->sockfd);   
-}
-
-void triggerError(int condition, char *msg)
+void triggerError(int condition, char *msg, int sockfd)
 {
     if (condition)
     {
         perror(msg);
-        g_exit = 1;
+        close(sockfd);
+        exit(EXIT_FAILURE);
     }
 }
-
 void handlesigint(int sig)
 {
-    g_exit = 1;
+    g_exit = TRUE;
     (void)sig;
-    //printf("\n--- ft_ping statistics ---\n");
-    //printf("%d packets transmitted, %d packets received, %.1f%% packet loss\n",
-    //    g_sent, g_received, g_sent == 0 ? 0.0 : ((g_sent - g_received) * 100.0 / g_sent));
-    //exit(0);
 }
 
 int main(int argc, char **argv)
 {
-    t_ping ping;
-    size_t pkg_sent = 0;
-    size_t pkg_received = 0;
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: %s <IP address>\n", argv[0]);
-        return 1;
-    }
-    if(signal(SIGINT, handlesigint) == SIG_ERR)
-    {
-        perror("signal failed");
-        return 1;
-    }
+    int                 sockfd;
+    u_int16_t           sequenceNumber = 0;
+    fd_set              readfds;
+    char                buffer[BUFFER_SIZE];
+    char                *domain = NULL;
+    long                rtt_microseconds = 0;
+    struct sockaddr_in  destAddress;
+    struct icmphdr      icmph_request;
+    struct icmphdr      *icmph_reply = NULL;
+    struct iphdr        *iph_reply = NULL;
+    struct timeval      start, end, timeout;
+    t_rtt               rtt;
+    bool                is_verbose;
+    void                (*ptrPrintReply)(struct iphdr *, struct icmphdr *, char *, long);
     
-    printf("pinging %s\n", argv[1]);
+    memset(&rtt, 0, sizeof(rtt));
+    if(signal(SIGINT, handlesigint) == SIG_ERR)
+        exit(EXIT_FAILURE);
 
-    // Setting up the destination address
-    memset(&ping.destAddress, 0, sizeof(ping.destAddress));
-    ping.destAddress.sin_family = AF_INET;
-    if(inet_pton(PF_INET, argv[1], &ping.destAddress.sin_addr) != 1)
+    // Verbose mode check
+    is_verbose = checkVerboseArguments(argc, argv);
+    ptrPrintReply = is_verbose == TRUE ? printReplyInfoVerbose : printReplyInfo;
+    domain = is_verbose == TRUE ? argv[2] : argv[1];
+    //
+    // Check if the domain is valid
+    setDestinationAddress(&destAddress, domain);
+    sockfd = initSocketFd();
+
+    printBeginning(domain, is_verbose, sockfd, &destAddress);
+    FD_ZERO(&readfds);
+
+    // Loop until the maximum sequence number is reached or CTRL-C is pressed
+    while(sequenceNumber < UINT16_MAX && g_exit == FALSE)
     {
-        perror("inet_pton failed");
-        return 1;
-    }
-
-    // Setting up the raw socket
-    ping.sockfd = initSocketFd();
-    if (ping.sockfd < 0)
-    {
-        perror("socket failed");
-        return 1;
-    }
-
-    // Setting up the ICMP header
-    memset(&ping.icmpHeader, 0, sizeof(struct icmphdr));
-
-    char buffer[1024] = {0};
-    struct timeval start, end;
-    long rtt_microseconds = 0;
-    ping.sequenceNumber = 0;
-
-    while(ping.sequenceNumber < UINT16_MAX && !g_exit)
-    {
-        defineICMPHeader(&ping);
-        sleep(1);
+        memset(&timeout, 0, sizeof(timeout));
+        memset(buffer, 0, sizeof(buffer));
+        // Define the ICMP header
+        defineICMPHeader(&icmph_request, ++sequenceNumber);
+        // Timestamp the start time
         gettimeofday(&start, NULL);
-        if (sendto(ping.sockfd, (void *)&ping.icmpHeader, sizeof(ping.icmpHeader), 0, (struct sockaddr *)&ping.destAddress, sizeof(ping.destAddress)) == -1)
+        // Send the ICMP request
+        triggerError(sendRequest(sockfd, &destAddress, &icmph_request) < 0, "sendto failed", sockfd);
+        ++rtt.pkg_sent;
+        // Set the timeout for the select function
+        timeout.tv_sec = (rtt.pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.mean, 0);
+        while(g_exit == FALSE)
         {
-            perror("sendto failed");
-            closeRessources(&ping);
-            g_exit = 1;
+            // If timeout is reached, breaks the loop and sends the next request
+            if (socketIsReady(sockfd, &readfds, &timeout) == FAILURE)
+                break;
+            // Receives data from the socket, stores in buffer
+            triggerError(receiveResponse(buffer, sockfd, sizeof(buffer)) < 0, "recvfrom failed", sockfd);
+            // Timestamp the end time
+            gettimeofday(&end, NULL);
+            // If no valid packet is received, continue to next iteration
+            if (getValidPacket(&icmph_reply, &icmph_request, buffer, &iph_reply) == FAILURE)
+                continue;
+            // Calculate the round-trip time
+            rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+            // Print the reply information
+            ptrPrintReply(iph_reply, icmph_reply, domain, rtt_microseconds);
+            ++rtt.pkg_received;
+            // Update the RTT statistics
+            rttUpdate(&rtt, rtt_microseconds);
             break;
         }
-        pkg_sent++;
-        if (recvfrom(ping.sockfd, buffer, sizeof(buffer), 0, NULL, NULL) == -1)
-            continue;
-        gettimeofday(&end, NULL);
-        
-        rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-        struct iphdr *ip_header = (struct iphdr *)buffer;
-        struct icmphdr *icmp_header = (struct icmphdr *)(buffer + (ip_header->ihl * 4));
-        if (icmp_header->un.echo.id != ping.icmpHeader.un.echo.id)
-            continue;
-        pkg_received++;
-
-        printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
-               ntohs(ip_header->tot_len) - (ip_header->ihl * 4), argv[1], 
-               ntohs(icmp_header->un.echo.sequence), ip_header->ttl, rtt_microseconds / 1000.0);
+        sleep(1);
     }
-    printf("\n--- ft_ping statistics ---\n");
-    printf("%ld packets transmitted, %ld packets received, %.1f%% packet loss\n",
-        pkg_sent, pkg_received, pkg_sent == 0 ? 0.0 : ((pkg_sent - pkg_received) * 100.0 / pkg_sent));
-    close(ping.sockfd);
+    finalizeMeanDeviation(&rtt);
+    printStatistics(&rtt, domain);
+    close(sockfd);
     return 0;
 }

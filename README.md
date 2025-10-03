@@ -43,5 +43,8 @@ https://www.geeksforgeeks.org/c-c-program-to-implement-checksum/
    https://datatracker.ietf.org/doc/html/rfc792
 
 TODO :
-   Free packet
-   
+   check leaks
+   Try launching several pings at a time
+   check arguments issues + leaks
+   mdev issue
+   -?

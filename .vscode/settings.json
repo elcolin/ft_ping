@@ -1,6 +1,16 @@
 {
     "files.associations": {
         "ip.h": "c",
-        "ft_ping.h": "c"
+        "ft_ping.h": "c",
+        "socket.h": "c",
+        "types.h": "c",
+        "cstdlib": "c",
+        "ip_icmp.h": "c",
+        "inet.h": "c",
+        "utils.h": "c",
+        "print.h": "c",
+        "rtt.h": "c",
+        "unistd.h": "c",
+        "args.h": "c"
     }
 }
