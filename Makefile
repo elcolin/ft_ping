@@ -1,38 +1,41 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -Werror -I.
-LIB = libftping.a
-EXEC = ft_ping
-SRC = main.c
+CC      = gcc
+CFLAGS  = -Wall -Wextra -Werror -I.
+LIB     = libftping.a
+EXEC    = ft_ping
 
-SRCDIR = utils
-SRCS = $(wildcard $(SRCDIR)/*.c)
-LIBOBJS = $(patsubst $(SRCDIR)/%.c, obj/%.o, $(SRCS))
+SRCMAIN = main.c
+SRCDIR  = utils
+SRCS    = $(addprefix $(SRCDIR)/, args.c domain.c packet.c print.c rtt.c socket.c utils.c)
 
-OBJDIR = obj
+OBJDIR  = obj
+OBJS    = $(OBJDIR)/$(SRCMAIN:.c=.o) \
+          $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
+
+LIBOBJS = $(filter-out $(OBJDIR)/main.o,$(OBJS))
 
 all: $(EXEC)
 
-$(EXEC): $(LIB) $(OBJDIR)/main.o
-	$(CC) $(CFLAGS) -o $@ $^ -L. -lftping -lm
+$(EXEC): $(LIB) $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) -L. -lftping -lm
 
-$(OBJDIR)/main.o: $(SRC)
+$(OBJDIR)/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -g3 -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(LIB): $(LIBOBJS)
-	ar rcs $(LIB) $(LIBOBJS)
+	ar rcs $@ $^
 
 lib: $(LIB)
 
 clean:
-	rm -rf $(OBJDIR) $(EXEC)
+	rm -rf $(OBJDIR)
 
 fclean: clean
-	rm -f $(LIB)
+	rm -f $(LIB) $(EXEC)
 
 re: fclean all
 

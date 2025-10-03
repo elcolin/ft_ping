@@ -20,6 +20,7 @@
 #include "inc/packet.h"
 #include "inc/socket.h"
 #include "inc/domain.h"
+#include "inc/args.h"
 
 #define JITTER 30000
 

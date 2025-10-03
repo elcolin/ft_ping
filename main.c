@@ -23,15 +23,13 @@ int main(int argc, char **argv)
     u_int16_t           sequenceNumber = 0;
     fd_set              readfds;
     char                buffer[BUFFER_SIZE];
-    char                *domain = NULL;
     long                rtt_microseconds = 0;
-    struct sockaddr_in  destAddress;
     struct icmphdr      icmph_request;
     struct icmphdr      *icmph_reply = NULL;
     struct iphdr        *iph_reply = NULL;
     struct timeval      start, end, timeout;
     t_rtt               rtt;
-    bool                is_verbose;
+    t_args              args;
     void                (*ptrPrintReply)(struct iphdr *, struct icmphdr *, char *, long);
     
     memset(&rtt, 0, sizeof(rtt));
@@ -39,15 +37,15 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
 
     // Verbose mode check
-    is_verbose = checkVerboseArguments(argc, argv);
-    ptrPrintReply = is_verbose == TRUE ? printReplyInfoVerbose : printReplyInfo;
-    domain = is_verbose == TRUE ? argv[2] : argv[1];
+    checkArguments(argc, argv, &args);
+    //is_verbose = checkVerboseArguments(argc, argv);
+    ptrPrintReply = args.activatedOptions[VERBOSE] == TRUE ? printReplyInfoVerbose : printReplyInfo;
     //
     // Check if the domain is valid
-    setDestinationAddress(&destAddress, domain);
+    setDestinationAddress(&args.destAddress, args.domain);
     sockfd = initSocketFd();
 
-    printBeginning(domain, is_verbose, sockfd, &destAddress);
+    printBeginning(&args, sockfd);
     FD_ZERO(&readfds);
 
     // Loop until the maximum sequence number is reached or CTRL-C is pressed
@@ -60,7 +58,7 @@ int main(int argc, char **argv)
         // Timestamp the start time
         gettimeofday(&start, NULL);
         // Send the ICMP request
-        triggerError(sendRequest(sockfd, &destAddress, &icmph_request) < 0, "sendto failed", sockfd);
+        triggerError(sendRequest(sockfd, &args.destAddress, &icmph_request) < 0, "sendto failed", sockfd);
         ++rtt.pkg_sent;
         // Set the timeout for the select function
         timeout.tv_sec = (rtt.pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.mean, 0);
@@ -79,7 +77,7 @@ int main(int argc, char **argv)
             // Calculate the round-trip time
             rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
             // Print the reply information
-            ptrPrintReply(iph_reply, icmph_reply, domain, rtt_microseconds);
+            ptrPrintReply(iph_reply, icmph_reply, args.domain, rtt_microseconds);
             ++rtt.pkg_received;
             // Update the RTT statistics
             rttUpdate(&rtt, rtt_microseconds);
@@ -88,7 +86,7 @@ int main(int argc, char **argv)
         sleep(1);
     }
     finalizeMeanDeviation(&rtt);
-    printStatistics(&rtt, domain);
+    printStatistics(&rtt, args.domain);
     close(sockfd);
     return 0;
 }

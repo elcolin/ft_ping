@@ -11,6 +11,8 @@
         "print.h": "c",
         "rtt.h": "c",
         "unistd.h": "c",
-        "args.h": "c"
+        "args.h": "c",
+        "stdio.h": "c",
+        "packet.h": "c"
     }
 }
