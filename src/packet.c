@@ -28,15 +28,24 @@ uint16_t computeChecksum(uint8_t *addr, int count)
     return (uint16_t)(~sum);
 }
 
-void defineRequestIPHeader(struct iphdr *ipHeader, u_int16_t sequenceNumber)
+void defineRequestIPHeader(struct iphdr *ipHeader,
+                           uint32_t src_ip,
+                           uint32_t dst_ip,
+                           uint16_t sequenceNumber)
 {
-    ipHeader->version = IPVERSION;
-    ipHeader->ihl = IPHDR_LEN;
-    ipHeader->id = sequenceNumber; // Number of fragments;
-    ipHeader->frag_off = 0x2;
+    ipHeader->ihl = 5;                 // 5 * 4 = 20 bytes (no options)
+    ipHeader->version = 4;
+    ipHeader->tos = 0;
+    ipHeader->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr));
+    ipHeader->id = htons(sequenceNumber);
+    ipHeader->frag_off = 0;
     ipHeader->ttl = 64;
     ipHeader->protocol = IPPROTO_ICMP;
-} 
+    ipHeader->saddr = src_ip;
+    ipHeader->daddr = dst_ip;
+    ipHeader->check = 0;               // must be zero before computing
+    ipHeader->check = computeChecksum((uint8_t *)ipHeader, sizeof(struct iphdr));
+}
 
 void defineRequestICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumber)
 {
@@ -45,12 +54,16 @@ void defineRequestICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumbe
     icmpHeader->code = ICMP_CODE;
     icmpHeader->un.echo.id = htons(getpid() & 0xFFFF);
     icmpHeader->un.echo.sequence = htons(sequenceNumber);
-    icmpHeader->checksum = computeChecksum((uint8_t *)icmpHeader, sizeof(*icmpHeader) + 16);
+    icmpHeader->checksum = computeChecksum((uint8_t *)icmpHeader, sizeof(*icmpHeader));
 }
 
-void defineRequestPacket(t_packet *packet, t_args *args)
+void defineRequestPacket(t_packet *request,
+                        uint32_t src_ip,
+                        uint32_t dst_ip,
+                        uint16_t sequenceNumber)
 {
-    
+    defineRequestICMPHeader(request->icmp_hdr, sequenceNumber);
+    defineRequestIPHeader(request->ip_hdr, src_ip, dst_ip, sequenceNumber);    
 }
 
 status comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request)

@@ -5,13 +5,15 @@ EXEC    = ft_ping
 SRCDIR  = src
 OBJDIR  = obj
 
-SRCS    = $(addprefix $(SRCDIR)/, main.c args.c domain.c packet.c print.c rtt.c socket.c utils.c)
+LDFLAGS = -lm
+
+SRCS    = $(addprefix $(SRCDIR)/, main.c args.c addr.c packet.c print.c rtt.c socket.c utils.c)
 OBJS    = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS))
 
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(@D)

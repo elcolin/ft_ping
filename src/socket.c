@@ -17,9 +17,9 @@ int initSocketFd()
     return sockfd;
 }
 
-int sendRequest(int sockfd, struct sockaddr_in *destAddress, struct icmphdr *icmpHeader)
+int sendRequest(int sockfd, struct sockaddr_in *destAddress, t_packet *request)
 {
-    return sendto(sockfd, (void *)icmpHeader, sizeof(struct icmphdr), 0, (struct sockaddr *)destAddress, sizeof(struct sockaddr_in));
+    return sendto(sockfd, (void *)request->buffer, sizeof(struct iphdr) + sizeof(struct icmphdr), 0, (struct sockaddr *)destAddress, sizeof(struct sockaddr_in));
 }
 
 

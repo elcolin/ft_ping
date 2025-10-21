@@ -14,9 +14,11 @@
 // close
 #include <unistd.h>
 #include "utils.h"
+#include "packet.h"
 
 int initSocketFd();
-int sendRequest(int sockfd, struct sockaddr_in *destAddress, struct icmphdr *icmpHeader);
+int sendRequest(int sockfd, struct sockaddr_in *destAddress, t_packet *request);
+//int sendRequest(int sockfd, struct sockaddr_in *destAddress, struct icmphdr *icmpHeader);
 int receiveResponse(void *buffer, int sockfd, u_int16_t buffer_size);
 status socketIsReady(int sockfd, fd_set *readfds, struct timeval *timeout);
 

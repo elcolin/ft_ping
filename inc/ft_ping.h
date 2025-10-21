@@ -19,7 +19,7 @@
 #include "rtt.h"
 #include "packet.h"
 #include "socket.h"
-#include "domain.h"
+#include "addr.h"
 #include "args.h"
 
 #define JITTER 30000
@@ -61,14 +61,12 @@ https://datatracker.ietf.org/doc/html/rfc791
    https://datatracker.ietf.org/doc/html/rfc792
 
 */
+#define PACKET_NUMBER 2
 
-typedef struct s_ping {
-   t_args   args;
-   t_packet request;
-   t_packet reply;
-   t_rtt    rtt;
-
-} t_ping;
+enum ID {
+   REQUEST,
+   REPLY
+};
 
 void     triggerError(int condition, char *msg, int sockfd);
 

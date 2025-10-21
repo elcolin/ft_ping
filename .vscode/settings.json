@@ -16,9 +16,12 @@
         "packet.h": "c",
         "errno.h": "c",
         "signal.h": "c",
-        "domain.h": "c",
+        "addr.h": "c",
         "string.h": "c",
         "time.h": "c",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "ioctl.h": "c",
+        "if.h": "c",
+        "features.h": "c"
     }
 }

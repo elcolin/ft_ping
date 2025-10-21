@@ -22,7 +22,6 @@
 
 #define IPHDR_SHIFT(start) ((void *)start + IPHDR_SIZE)
 #define ICMPHDR_SHIFT(start) ((void *)start + ICMPHDR_SIZE)
-#define TOTHDR_SHIFT(start) ((void *)start + IPHDR_SIZE + ICMPHDR_SIZE)
 
 typedef struct s_packet {
     uint8_t         buffer[BUFFER_SIZE];
@@ -31,10 +30,18 @@ typedef struct s_packet {
 }   t_packet;
 
 uint16_t computeChecksum(uint8_t *addr, int count);
-void     defineICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumber);
+void     defineRequestICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumber);
 status comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request);
 int parsePacket(void *buffer, struct iphdr **ip_header, struct icmphdr **icmp_header);
 status getValidPacket(t_packet *reply, t_packet *request);
+void defineRequestIPHeader(struct iphdr *ipHeader,
+                           uint32_t src_ip,
+                           uint32_t dst_ip,
+                           uint16_t sequenceNumber);
+void defineRequestPacket(t_packet *request,
+                        uint32_t src_ip,
+                        uint32_t dst_ip,
+                        uint16_t sequenceNumber);
 
 void initPacket(t_packet *packet);
 
