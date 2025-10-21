@@ -50,10 +50,10 @@ int main(int argc, char **argv)
         initPacket(&packets[REQUEST]);
         handlePacketOptions(&packets[REQUEST], &args);
         defineRequestPacket(&packets[REQUEST], addrs[REQUEST].sin_addr.s_addr, addrs[REPLY].sin_addr.s_addr, ++sequenceNumber);
+        timeout.tv_sec = (rtt.pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.mean, 0);
         gettimeofday(&start, NULL);
         triggerError(sendRequest(sockfd, &addrs[REPLY], &packets[REQUEST]) < 0, "sendto failed", sockfd);
         ++rtt.pkg_sent;
-        timeout.tv_sec = (rtt.pkg_received == 0) ? 1 : (timeout.tv_usec = JITTER + rtt.mean, 0);
         while(g_exit == FALSE)
         {
             if (socketIsReady(sockfd, &readfds, &timeout) == FAILURE)
@@ -62,8 +62,9 @@ int main(int argc, char **argv)
             gettimeofday(&end, NULL);
             if (getValidPacket(&packets[REPLY], &packets[REQUEST]) == FAILURE)
             {
-                printPacketError(&packets[REPLY], sequenceNumber);
-                break;
+                if (printPacketError(&packets[REPLY], sequenceNumber) == TRUE)
+                    break;
+                continue;
             }
             rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
             printReplyInfo(&packets[REPLY], rtt_microseconds, &args, args.domain);

@@ -28,10 +28,10 @@ void  printStatistics(t_rtt *rtt, char *domain)
             rtt->min / 1000.0, rtt->mean / 1000.0, rtt->max / 1000.0, rtt->mdev / 1000);
 }
 
-void printPacketError(t_packet *reply, const int sequenceNumber)
+int printPacketError(t_packet *reply, const int sequenceNumber)
 {
-    if (reply == NULL)
-        return;
+    if (reply->ip_hdr == NULL || reply->icmp_hdr == NULL)
+        return FALSE;
     uint32_t saddr = reply->ip_hdr->saddr; // in network byte order
     struct in_addr addr;
     addr.s_addr = saddr;
@@ -42,15 +42,17 @@ void printPacketError(t_packet *reply, const int sequenceNumber)
         case ICMP_DEST_UNREACH:
             char *msg_unreach[] = {"Destination net unreachable", "Destination host unreachable", "Destination protocol unreachable", "Destination port unreachable", "Fragmentation needed and DF set", "Source route failed"};
             printf("From %s icmp_seq=%d %s\n", ip_str, sequenceNumber, msg_unreach[reply->icmp_hdr->code]);
+            return TRUE;
         break;
         case ICMP_TIME_EXCEEDED:
             char *msg_ttl[] = {"Time to live exceeded", "Fragment Reass time exceeded"};
             printf("From %s icmp_seq=%d %s\n", ip_str, sequenceNumber, msg_ttl[reply->icmp_hdr->code]);
+            return TRUE;
         break;
         default:
-            return;
+            return FALSE;
     }
-
+    return FALSE;
 }
 
 void printBeginning(t_args *args, int sockfd, struct sockaddr_in *destAddr)
