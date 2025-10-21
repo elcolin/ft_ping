@@ -17,7 +17,7 @@
 
 int initSocketFd();
 int sendRequest(int sockfd, struct sockaddr_in *destAddress, struct icmphdr *icmpHeader);
-int receiveResponse(char *buffer, int sockfd, u_int16_t buffer_size);
+int receiveResponse(void *buffer, int sockfd, u_int16_t buffer_size);
 status socketIsReady(int sockfd, fd_set *readfds, struct timeval *timeout);
 
 #endif

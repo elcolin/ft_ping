@@ -13,6 +13,12 @@
         "unistd.h": "c",
         "args.h": "c",
         "stdio.h": "c",
-        "packet.h": "c"
+        "packet.h": "c",
+        "errno.h": "c",
+        "signal.h": "c",
+        "domain.h": "c",
+        "string.h": "c",
+        "time.h": "c",
+        "stddef.h": "c"
     }
 }

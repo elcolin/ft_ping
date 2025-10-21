@@ -1,4 +1,4 @@
-#include "inc/print.h"
+#include "print.h"
 
 void printReplyInfo(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds)
 {
@@ -30,7 +30,7 @@ void printBeginning(t_args *args, int sockfd)
     {
         printf("ping: sock4.fd: %d (socktype: SOCK_RAW), hints.ai_family: AF_INET\n\n", sockfd);
         printf("ai->ai_family: AF_INET, ai->ai_canonname: '%s'\n", args->domain);
-        printf("PING %s (%s) %ld(%ld) bytes of data\n", args->domain, inet_ntoa(args->destAddress.sin_addr), sizeof(struct icmphdr), sizeof(struct iphdr) + sizeof(struct icmphdr));
+        printf("PING %s (%s) %ld(%ld) bytes of data\n", args->domain, inet_ntoa(args->destAddress.sin_addr), (long int) 0/*size of extra data */, sizeof(struct iphdr) + sizeof(struct icmphdr));
         return;
     }
     printf("PING %s (%s) %ld bytes of data\n", args->domain, inet_ntoa(args->destAddress.sin_addr), sizeof(struct icmphdr));

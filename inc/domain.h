@@ -15,7 +15,6 @@
 #include <string.h>
 
 status resolveFQDN(char *fqdn, struct sockaddr_in *addr);
-bool checkVerboseArguments(int argc, char **argv);
 void setDestinationAddress(struct sockaddr_in *destAddress, char *ip_address);
 
 #endif

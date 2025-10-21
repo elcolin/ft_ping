@@ -1,4 +1,4 @@
-#include "inc/socket.h"
+#include "socket.h"
 
 int initSocketFd()
 {
@@ -23,7 +23,7 @@ int sendRequest(int sockfd, struct sockaddr_in *destAddress, struct icmphdr *icm
 }
 
 
-int receiveResponse(char *buffer, int sockfd, u_int16_t buffer_size)
+int receiveResponse(void *buffer, int sockfd, u_int16_t buffer_size)
 {
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);

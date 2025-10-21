@@ -11,14 +11,31 @@
 #include <unistd.h>
 
 #include "utils.h"
+#include "args.h"
 
 #define ICMP_CODE 0
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1024 //-> max buffer size 65 535
+#define IPHDR_LEN 20
+
+#define IPHDR_SIZE (sizeof(struct iphdr))
+#define ICMPHDR_SIZE (sizeof(struct icmphdr))
+
+#define IPHDR_SHIFT(start) ((void *)start + IPHDR_SIZE)
+#define ICMPHDR_SHIFT(start) ((void *)start + ICMPHDR_SIZE)
+#define TOTHDR_SHIFT(start) ((void *)start + IPHDR_SIZE + ICMPHDR_SIZE)
+
+typedef struct s_packet {
+    uint8_t         buffer[BUFFER_SIZE];
+    struct iphdr    *ip_hdr;
+    struct icmphdr  *icmp_hdr;
+}   t_packet;
 
 uint16_t computeChecksum(uint8_t *addr, int count);
 void     defineICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumber);
 status comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request);
-int parsePacket(char *buffer, struct iphdr **ip_header, struct icmphdr **icmp_header);
-status getValidPacket(struct icmphdr **icmph_reply, struct icmphdr *icmph_request, char *buffer, struct iphdr **iph_reply);
+int parsePacket(void *buffer, struct iphdr **ip_header, struct icmphdr **icmp_header);
+status getValidPacket(t_packet *reply, t_packet *request);
+
+void initPacket(t_packet *packet);
 
 #endif

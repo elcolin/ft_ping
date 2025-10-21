@@ -1,4 +1,4 @@
-#include "inc/utils.h"
+#include "utils.h"
 
 int countDigits(int n)
 {

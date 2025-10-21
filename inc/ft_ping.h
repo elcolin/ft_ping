@@ -14,13 +14,13 @@
 // errno
 #include <errno.h>
 
-#include "inc/print.h"
-#include "inc/utils.h"
-#include "inc/rtt.h"
-#include "inc/packet.h"
-#include "inc/socket.h"
-#include "inc/domain.h"
-#include "inc/args.h"
+#include "print.h"
+#include "utils.h"
+#include "rtt.h"
+#include "packet.h"
+#include "socket.h"
+#include "domain.h"
+#include "args.h"
 
 #define JITTER 30000
 
@@ -61,6 +61,14 @@ https://datatracker.ietf.org/doc/html/rfc791
    https://datatracker.ietf.org/doc/html/rfc792
 
 */
+
+typedef struct s_ping {
+   t_args   args;
+   t_packet request;
+   t_packet reply;
+   t_rtt    rtt;
+
+} t_ping;
 
 void     triggerError(int condition, char *msg, int sockfd);
 

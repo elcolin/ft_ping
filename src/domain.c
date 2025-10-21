@@ -1,4 +1,4 @@
-#include "inc/domain.h"
+#include "domain.h"
 
 status resolveFQDN(char *fqdn, struct sockaddr_in *addr)
 {
@@ -17,13 +17,23 @@ status resolveFQDN(char *fqdn, struct sockaddr_in *addr)
     return SUCCESS;
 }
 
-void setDestinationAddress(struct sockaddr_in *destAddress, char *ip_address)
+void setAddress(struct sockaddr_in *address, char *ip_address)
 {
-    memset(destAddress, 0, sizeof(*destAddress));
-    destAddress->sin_family = AF_INET;
-    if(inet_pton(PF_INET, ip_address, &destAddress->sin_addr) != 1 && resolveFQDN(ip_address, destAddress) == FAILURE)
+    memset(address, 0, sizeof(*address));
+    address->sin_family = AF_INET;
+    if(inet_pton(PF_INET, ip_address, &address->sin_addr) != 1 && resolveFQDN(ip_address, address) == FAILURE)
     {
         fprintf(stderr, "Invalid address: %s\n", ip_address);
         exit(EXIT_FAILURE);
     }
+}
+
+void setDestinationAddress(struct sockaddr_in *destAddress, char *ip_address)
+{
+    setAddress(destAddress, ip_address);
+}
+
+void setSourceAddress(struct sockaddr_in *srcAddress, char *ip_address)
+{
+    setAddress(srcAddress, ip_address);
 }
