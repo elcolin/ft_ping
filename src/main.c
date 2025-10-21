@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     u_int16_t           sequenceNumber = 0;
     t_packet            packets[PACKET_NUMBER] = {0};
     struct sockaddr_in  addrs[PACKET_NUMBER] = {0};
+    int                 error;
 
     if(signal(SIGINT, handlesigint) == SIG_ERR)
         exit(EXIT_FAILURE);
@@ -59,6 +60,7 @@ int main(int argc, char **argv)
     // Loop until the maximum sequence number is reached or CTRL-C is pressed
     while(sequenceNumber < UINT16_MAX && g_exit == FALSE)
     {
+        error = 0;
         memset(&timeout, 0, sizeof(timeout));
         memset(&packets[REPLY], 0, sizeof(packets[REPLY]));
         initPacket(&packets[REQUEST]);
@@ -82,8 +84,11 @@ int main(int argc, char **argv)
             // Timestamp the end time
             gettimeofday(&end, NULL);
             // If no valid packet is received, continue to next iteration
-            if (getValidPacket(&packets[REPLY], &packets[REQUEST]) == FAILURE)
-                continue;
+            if (getValidPacket(&packets[REPLY], &packets[REQUEST], &error) == FAILURE)
+            {
+                printPacketError(&packets[REPLY], error, sequenceNumber);
+                break;
+            }
             // Calculate the round-trip time
             rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
             // Print the reply information

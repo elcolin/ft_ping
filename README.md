@@ -41,10 +41,3 @@ https://www.geeksforgeeks.org/c-c-program-to-implement-checksum/
                     Echo or Echo Reply Message
 
    https://datatracker.ietf.org/doc/html/rfc792
-
-TODO :
-   check leaks
-   Try launching several pings at a time
-   check arguments issues + leaks
-   mdev issue
-   -?

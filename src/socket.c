@@ -34,11 +34,7 @@ status socketIsReady(int sockfd, fd_set *readfds, struct timeval *timeout)
 {
     FD_SET(sockfd, readfds);
     if (select(sockfd + 1, readfds, NULL, NULL, timeout) < 0)
-    {
-        perror("select failed");
-        close(sockfd);
-        exit(EXIT_FAILURE);
-    }
+        return FAILURE;
     if (timeout->tv_sec == 0 && timeout->tv_usec == 0)
         return FAILURE;
     FD_CLR(sockfd, readfds);
