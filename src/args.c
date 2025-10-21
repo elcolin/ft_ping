@@ -12,7 +12,7 @@ bool strIsDigit(char *str)
 
 void checkArguments(int argc, char **argv, t_args *args)
 {
-    const char *optionsName[] = {"-v"};
+    const char *optionsName[] = OPTIONS;
     const size_t ADDRIDX = argc - 1;
     size_t  param = 0;
     args->domain = argv[ADDRIDX];
@@ -29,7 +29,8 @@ void checkArguments(int argc, char **argv, t_args *args)
             if (strcmp(argv[i], optionsName[optionIdx]))
                 continue;
             args->activatedOptions[optionIdx] = TRUE;
-            //if(optionIdx >= VALUED_OPTIONS)
+            printf("%ld %d", optionIdx, VALUED_OPTIONS);
+            if(optionIdx >= VALUED_OPTIONS)
                 break;
             param = atoi(argv[i + 1]);
             if (!param || strIsDigit(argv[i + 1]) == FALSE || i + 1 >= ADDRIDX) // separate condition

@@ -9,9 +9,12 @@
 #include "utils.h"
 #include "rtt.h"
 #include "args.h"
+#include "packet.h"
 
-void printBeginning(t_args *args, int sockfd);
-void printReplyInfo(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds);
+void printBeginning(t_args *args, int sockfd, struct sockaddr_in *destAddr);
+void printReplyInfo(const t_packet *packet, const long rtt_microseconds, const t_args *args, char *ipAddr);
+
+// void printReplyInfo(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds);
 void printReplyInfoVerbose(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds);
 void printStatistics(t_rtt *rtt, char *domain);
 

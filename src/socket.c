@@ -19,7 +19,7 @@ int initSocketFd()
 
 int sendRequest(int sockfd, struct sockaddr_in *destAddress, t_packet *request)
 {
-    return sendto(sockfd, (void *)request->buffer, sizeof(struct iphdr) + sizeof(struct icmphdr), 0, (struct sockaddr *)destAddress, sizeof(struct sockaddr_in));
+    return sendto(sockfd, (void *)request->buffer, ntohs(request->ip_hdr->tot_len), 0, (struct sockaddr *)destAddress, sizeof(struct sockaddr_in));
 }
 
 

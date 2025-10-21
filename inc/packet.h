@@ -16,6 +16,7 @@
 #define ICMP_CODE 0
 #define BUFFER_SIZE 1024 //-> max buffer size 65 535
 #define IPHDR_LEN 20
+#define DEFAULT_PADDING 56
 
 #define IPHDR_SIZE (sizeof(struct iphdr))
 #define ICMPHDR_SIZE (sizeof(struct icmphdr))
@@ -29,20 +30,22 @@ typedef struct s_packet {
     struct icmphdr  *icmp_hdr;
 }   t_packet;
 
-uint16_t computeChecksum(uint8_t *addr, int count);
-void     defineRequestICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumber);
-status comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request);
-int parsePacket(void *buffer, struct iphdr **ip_header, struct icmphdr **icmp_header);
-status getValidPacket(t_packet *reply, t_packet *request);
-void defineRequestIPHeader(struct iphdr *ipHeader,
-                           uint32_t src_ip,
-                           uint32_t dst_ip,
-                           uint16_t sequenceNumber);
-void defineRequestPacket(t_packet *request,
+void        initPacket(t_packet *packet);
+uint16_t    computeChecksum(uint8_t *addr, int count);
+void        handlePacketOptions(t_packet *packet, const t_args *args);
+void        defineRequestPacket(t_packet *request,
                         uint32_t src_ip,
                         uint32_t dst_ip,
                         uint16_t sequenceNumber);
+void        defineRequestIPHeader(struct iphdr *ipHeader,
+                           uint32_t src_ip,
+                           uint32_t dst_ip,
+                           uint16_t sequenceNumber);
+void        defineRequestICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumber);
+status      comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request);
+int         parsePacket(void *buffer, struct iphdr **ip_header, struct icmphdr **icmp_header);
+status      getValidPacket(t_packet *reply, t_packet *request);
 
-void initPacket(t_packet *packet);
+
 
 #endif

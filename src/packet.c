@@ -36,10 +36,12 @@ void defineRequestIPHeader(struct iphdr *ipHeader,
     ipHeader->ihl = 5;                 // 5 * 4 = 20 bytes (no options)
     ipHeader->version = 4;
     ipHeader->tos = 0;
-    ipHeader->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr));
+    if (!ipHeader->tot_len)
+        ipHeader->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr) + DEFAULT_PADDING);
     ipHeader->id = htons(sequenceNumber);
     ipHeader->frag_off = 0;
-    ipHeader->ttl = 64;
+    if (!ipHeader->ttl)
+        ipHeader->ttl = 64;
     ipHeader->protocol = IPPROTO_ICMP;
     ipHeader->saddr = src_ip;
     ipHeader->daddr = dst_ip;
@@ -55,6 +57,14 @@ void defineRequestICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumbe
     icmpHeader->un.echo.id = htons(getpid() & 0xFFFF);
     icmpHeader->un.echo.sequence = htons(sequenceNumber);
     icmpHeader->checksum = computeChecksum((uint8_t *)icmpHeader, sizeof(*icmpHeader));
+}
+
+void handlePacketOptions(t_packet *packet, const t_args *args)
+{
+    if (args->activatedOptions[TTL] == TRUE)
+            packet->ip_hdr->ttl = args->optionsValue[TTL];
+    if (args->activatedOptions[PACKET_SIZE] == TRUE)
+            packet->ip_hdr->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr) + args->optionsValue[PACKET_SIZE]);
 }
 
 void defineRequestPacket(t_packet *request,

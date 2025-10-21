@@ -1,19 +1,23 @@
 #include "print.h"
 
-void printReplyInfo(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds)
+void printReplyInfo(const t_packet *packet, const long rtt_microseconds, const t_args *args, char *ipAddr)
 {
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.*f ms\n",
-        ntohs(ip_header->tot_len) - (ip_header->ihl * 4), ip_address,
-        ntohs(icmp_header->un.echo.sequence), ip_header->ttl, getDecimalsToPrint(rtt_microseconds), rtt_microseconds / 1000.0);
+    if (args->activatedOptions[VERBOSE] == TRUE)
+    {
+        printf("%d bytes from %s: icmp_seq=%d ident=%d ttl=%d",
+        ntohs(packet->ip_hdr->tot_len) - (packet->ip_hdr->ihl * 4), ipAddr,
+        ntohs(packet->icmp_hdr->un.echo.sequence), ntohs(packet->icmp_hdr->un.echo.id), packet->ip_hdr->ttl);
+    }
+    else
+    {
+        printf("%d bytes from %s: icmp_seq=%d ttl=%d",
+        ntohs(packet->ip_hdr->tot_len) - (packet->ip_hdr->ihl * 4), ipAddr,
+        ntohs(packet->icmp_hdr->un.echo.sequence), packet->ip_hdr->ttl);
+    }
+    if (args->optionsValue[PACKET_SIZE] >= 16)
+            printf(" time=%.*f ms", getDecimalsToPrint(rtt_microseconds), rtt_microseconds / 1000.0);
+    printf("\n");
 }
-
-void printReplyInfoVerbose(struct iphdr *ip_header, struct icmphdr *icmp_header, char *ip_address, long rtt_microseconds)
-{
-    printf("%d bytes from %s: icmp_seq=%d ident=%d ttl=%d time=%.*f ms\n",
-        ntohs(ip_header->tot_len) - (ip_header->ihl * 4), ip_address,
-        ntohs(icmp_header->un.echo.sequence), ntohs(icmp_header->un.echo.id), ip_header->ttl, getDecimalsToPrint(rtt_microseconds), rtt_microseconds / 1000.0);
-}
-
 void  printStatistics(t_rtt *rtt, char *domain)
 {
     printf("\n--- %s ft_ping statistics ---\n", domain);
@@ -24,14 +28,14 @@ void  printStatistics(t_rtt *rtt, char *domain)
             rtt->min / 1000.0, rtt->mean / 1000.0, rtt->max / 1000.0, rtt->mdev / 1000);
 }
 
-void printBeginning(t_args *args, int sockfd)
+void printBeginning(t_args *args, int sockfd, struct sockaddr_in *destAddr)
 {
     if (args->activatedOptions[VERBOSE] == TRUE)
     {
         printf("ping: sock4.fd: %d (socktype: SOCK_RAW), hints.ai_family: AF_INET\n\n", sockfd);
         printf("ai->ai_family: AF_INET, ai->ai_canonname: '%s'\n", args->domain);
-        printf("PING %s (%s) %ld(%ld) bytes of data\n", args->domain, inet_ntoa(args->destAddress.sin_addr), (long int) 0/*size of extra data */, sizeof(struct iphdr) + sizeof(struct icmphdr));
+        printf("PING %s (%s) %d(%ld) bytes of data\n", args->domain, inet_ntoa(destAddr->sin_addr), args->optionsValue[PACKET_SIZE], sizeof(struct iphdr) + sizeof(struct icmphdr) + args->optionsValue[PACKET_SIZE]);
         return;
     }
-    printf("PING %s (%s) %ld bytes of data\n", args->domain, inet_ntoa(args->destAddress.sin_addr), sizeof(struct icmphdr));
+    printf("PING %s (%s) %ld bytes of data\n", args->domain, inet_ntoa(destAddr->sin_addr), sizeof(struct icmphdr));
 }

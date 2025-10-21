@@ -19,25 +19,27 @@ void handlesigint(int sig)
 
 int main(int argc, char **argv)
 {
+    // args
+    t_args              args = {};
+    // socket
     int                 sockfd;
-    u_int16_t           sequenceNumber = 0;
     fd_set              readfds;
+    // rtt
+    struct timeval      start, end, timeout;
     long                rtt_microseconds = 0;
-
+    t_rtt               rtt = {};
+    //packet
+    u_int16_t           sequenceNumber = 0;
     t_packet            packets[PACKET_NUMBER] = {0};
     struct sockaddr_in  addrs[PACKET_NUMBER] = {0};
-
-    struct timeval      start, end, timeout;
-    t_rtt               rtt = {};
-    t_args              args = {};
-    void                (*ptrPrintReply)(struct iphdr *, struct icmphdr *, char *, long);
 
     if(signal(SIGINT, handlesigint) == SIG_ERR)
         exit(EXIT_FAILURE);
 
-    // Verbose mode check
+    // Option check
     checkArguments(argc, argv, &args);
-    ptrPrintReply = args.activatedOptions[VERBOSE] == TRUE ? printReplyInfoVerbose : printReplyInfo;
+    if (args.activatedOptions[PACKET_SIZE] == FALSE)
+        args.optionsValue[PACKET_SIZE] = DEFAULT_PADDING;
 
     // Check if the domain is valid
     setDestinationAddress(&addrs[REPLY], args.domain);
@@ -51,9 +53,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    // TO DO Remove
-    args.destAddress = addrs[REPLY];
-    printBeginning(&args, sockfd);
+    printBeginning(&args, sockfd, &addrs[REPLY]);
     FD_ZERO(&readfds);
     
     // Loop until the maximum sequence number is reached or CTRL-C is pressed
@@ -61,8 +61,9 @@ int main(int argc, char **argv)
     {
         memset(&timeout, 0, sizeof(timeout));
         memset(&packets[REPLY], 0, sizeof(packets[REPLY]));
-        // Define the ICMP header
         initPacket(&packets[REQUEST]);
+        handlePacketOptions(&packets[REQUEST], &args);
+        // Define the header
         defineRequestPacket(&packets[REQUEST], addrs[REQUEST].sin_addr.s_addr, addrs[REPLY].sin_addr.s_addr, ++sequenceNumber);
         // Timestamp the start time
         gettimeofday(&start, NULL);
@@ -86,7 +87,7 @@ int main(int argc, char **argv)
             // Calculate the round-trip time
             rtt_microseconds = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
             // Print the reply information
-            ptrPrintReply(packets[REPLY].ip_hdr, packets[REPLY].icmp_hdr, args.domain, rtt_microseconds);
+            printReplyInfo(&packets[REPLY], rtt_microseconds, &args, args.domain);
             ++rtt.pkg_received;
             // Update the RTT statistics
             rttUpdate(&rtt, rtt_microseconds);
