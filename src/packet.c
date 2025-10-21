@@ -76,12 +76,10 @@ void defineRequestPacket(t_packet *request,
     defineRequestIPHeader(request->ip_hdr, src_ip, dst_ip, sequenceNumber);    
 }
 
-status comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request, int *error)
+status comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request)
 {
     if (icmp_reply == NULL || icmp_request == NULL)
         return FAILURE;
-    if (icmp_reply->type == 11)
-        *error = icmp_reply->type;
     if (icmp_reply->un.echo.id != icmp_request->un.echo.id)
     // Not the same process
         return FAILURE;
@@ -100,12 +98,12 @@ int parsePacket(void *buffer, struct iphdr **ip_header, struct icmphdr **icmp_he
     return ntohs((*ip_header)->tot_len);
 }
 
-status getValidPacket(t_packet *reply, t_packet *request, int *error)
+status getValidPacket(t_packet *reply, t_packet *request)
 {
     int pkg_idx = 0;
-    while (comparePackets(reply->icmp_hdr, request->icmp_hdr, error) != SUCCESS && pkg_idx >= 0 && pkg_idx < BUFFER_SIZE)
+    while (comparePackets(reply->icmp_hdr, request->icmp_hdr) != SUCCESS && pkg_idx >= 0 && pkg_idx < BUFFER_SIZE)
     {
-        if (*error)
+        if (reply->icmp_hdr && reply->icmp_hdr->type)
             return FAILURE;
         // Loop until we find a valid packet
         pkg_idx = parsePacket(&(reply->buffer[pkg_idx]), &reply->ip_hdr, &reply->icmp_hdr);

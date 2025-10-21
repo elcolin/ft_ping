@@ -29,7 +29,6 @@ void checkArguments(int argc, char **argv, t_args *args)
             if (strcmp(argv[i], optionsName[optionIdx]))
                 continue;
             args->activatedOptions[optionIdx] = TRUE;
-            printf("%ld %d", optionIdx, VALUED_OPTIONS);
             if(optionIdx >= VALUED_OPTIONS)
                 break;
             param = atoi(argv[i + 1]);

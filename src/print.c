@@ -28,7 +28,7 @@ void  printStatistics(t_rtt *rtt, char *domain)
             rtt->min / 1000.0, rtt->mean / 1000.0, rtt->max / 1000.0, rtt->mdev / 1000);
 }
 
-void printPacketError(t_packet *reply, const int error, const int sequenceNumber)
+void printPacketError(t_packet *reply, const int sequenceNumber)
 {
     if (reply == NULL)
         return;
@@ -37,7 +37,7 @@ void printPacketError(t_packet *reply, const int error, const int sequenceNumber
     addr.s_addr = saddr;
 
     char *ip_str = inet_ntoa(addr); // returns a pointer to static buffer
-    switch (error)
+    switch (reply->icmp_hdr->type)
     {
         case ICMP_DEST_UNREACH:
             char *msg_unreach[] = {"Destination net unreachable", "Destination host unreachable", "Destination protocol unreachable", "Destination port unreachable", "Fragmentation needed and DF set", "Source route failed"};
@@ -52,18 +52,6 @@ void printPacketError(t_packet *reply, const int error, const int sequenceNumber
     }
 
 }
-/*      0 = net unreachable;
-
-      1 = host unreachable;
-
-      2 = protocol unreachable;
-
-      3 = port unreachable;
-
-      4 = fragmentation needed and DF set;
-
-      5 = source route failed.
-*/
 
 void printBeginning(t_args *args, int sockfd, struct sockaddr_in *destAddr)
 {
