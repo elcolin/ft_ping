@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Werror -g3 -Iinc
+CFLAGS  = -Wall -Wextra -Werror -Iinc
 EXEC    = ft_ping
 
 SRCDIR  = src
