@@ -10,7 +10,7 @@ status resolveFQDN(char *fqdn, struct sockaddr_in *addr)
     if (getaddrinfo(fqdn, NULL, &hints, &result) != 0)
     {
        perror("getaddrinfo failed");
-       return FAILURE;
+       exit(EXIT_FAILURE);
     }
     memcpy(addr, result->ai_addr, sizeof(struct sockaddr_in));
     freeaddrinfo(result);
@@ -33,7 +33,11 @@ void setSourceAddress(struct sockaddr_in *srcAddress, const struct sockaddr_in *
     memset(srcAddress, 0, sizeof(*srcAddress));
     struct ifaddrs *networkInterfaces = NULL;
     
-    getifaddrs(&networkInterfaces);
+    if (getifaddrs(&networkInterfaces) != 0)
+    {
+        perror("getifaddrs failed");
+        exit(EXIT_FAILURE);
+    };
     struct ifaddrs *idx = networkInterfaces;
     while (idx)
     {
@@ -48,6 +52,7 @@ void setSourceAddress(struct sockaddr_in *srcAddress, const struct sockaddr_in *
         }
         idx = idx->ifa_next;
     }
+    freeifaddrs(networkInterfaces);
     fprintf(stderr, "Coulnd't get host address");
     exit(EXIT_FAILURE);
 }

@@ -22,6 +22,7 @@
         "stddef.h": "c",
         "ioctl.h": "c",
         "if.h": "c",
-        "features.h": "c"
+        "features.h": "c",
+        "ctype.h": "c"
     }
 }

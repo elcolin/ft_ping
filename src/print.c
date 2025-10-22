@@ -18,11 +18,13 @@ void printReplyInfo(const t_packet *packet, const long rtt_microseconds, const t
             printf(" time=%.*f ms", getDecimalsToPrint(rtt_microseconds), rtt_microseconds / 1000.0);
     printf("\n");
 }
-void  printStatistics(t_rtt *rtt, char *domain)
+void  printStatistics(const t_rtt *rtt, const char *domain, const size_t error_cnt, const uint64_t elapsed_time)
 {
     printf("\n--- %s ft_ping statistics ---\n", domain);
-    printf("%ld packets transmitted, %ld packets received, %.1f%% packet loss\n",
-        rtt->pkg_sent, rtt->pkg_received, rtt->pkg_sent == 0 ? 0.0 : ((rtt->pkg_sent - rtt->pkg_received) * 100.0 / rtt->pkg_sent));
+    printf("%ld packets transmitted, %ld received,", rtt->pkg_sent, rtt->pkg_received);
+    if (error_cnt)
+        printf(" +%ld errors,", error_cnt);
+    printf(" %.1f%% packet loss, time %ldms\n", rtt->pkg_sent == 0 ? 0.0 : ((rtt->pkg_sent - rtt->pkg_received) * 100.0 / rtt->pkg_sent), elapsed_time);
     if (rtt->pkg_received != 0)
         printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
             rtt->min / 1000.0, rtt->mean / 1000.0, rtt->max / 1000.0, rtt->mdev / 1000);
@@ -30,7 +32,7 @@ void  printStatistics(t_rtt *rtt, char *domain)
 
 int printPacketError(t_packet *reply, const int sequenceNumber)
 {
-    if (reply->ip_hdr == NULL || reply->icmp_hdr == NULL)
+    if (reply->ip_hdr == NULL || reply->icmp_hdr == NULL || reply->icmp_hdr->type == 0)
         return FALSE;
     uint32_t saddr = reply->ip_hdr->saddr; // in network byte order
     struct in_addr addr;
@@ -61,7 +63,6 @@ void printBeginning(t_args *args, int sockfd, struct sockaddr_in *destAddr)
     {
         printf("ping: sock4.fd: %d (socktype: SOCK_RAW), hints.ai_family: AF_INET\n\n", sockfd);
         printf("ai->ai_family: AF_INET, ai->ai_canonname: '%s'\n", args->domain);
-        return;
     }
-    printf("PING %s (%s) %d(%ld) bytes of data\n", args->domain, inet_ntoa(destAddr->sin_addr), args->optionsValue[PACKET_SIZE], sizeof(struct iphdr) + sizeof(struct icmphdr) + args->optionsValue[PACKET_SIZE]);
+    printf("PING %s (%s) %ld(%ld) bytes of data\n", args->domain, inet_ntoa(destAddr->sin_addr), args->optionsValue[PACKET_SIZE], sizeof(struct iphdr) + sizeof(struct icmphdr) + args->optionsValue[PACKET_SIZE]);
 }

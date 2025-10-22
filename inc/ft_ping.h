@@ -68,6 +68,14 @@ enum ID {
    REPLY
 };
 
-void     triggerError(int condition, char *msg, int sockfd);
+static inline void triggerErrorIf(int condition, char *msg, int sockfd)
+{
+    if (condition)
+    {
+        perror(msg);
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+}
 
 #endif

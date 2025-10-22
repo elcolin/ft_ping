@@ -1,8 +1,5 @@
 #include "packet.h"
 
-// TODO Remove
-#include <stdio.h>
-
 void initPacket(t_packet *packet)
 {
     memset(packet->buffer, 0, sizeof(packet->buffer));
@@ -36,12 +33,10 @@ void defineRequestIPHeader(struct iphdr *ipHeader,
     ipHeader->ihl = 5;                 // 5 * 4 = 20 bytes (no options)
     ipHeader->version = 4;
     ipHeader->tos = 0;
-    if (!ipHeader->tot_len)
-        ipHeader->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr) + DEFAULT_PADDING);
+    //  ipHeader->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr) + DEFAULT_PADDING);
     ipHeader->id = htons(sequenceNumber);
     ipHeader->frag_off = 0;
-    if (!ipHeader->ttl)
-        ipHeader->ttl = 64;
+    //    ipHeader->ttl = 64;
     ipHeader->protocol = IPPROTO_ICMP;
     ipHeader->saddr = src_ip;
     ipHeader->daddr = dst_ip;
@@ -61,10 +56,8 @@ void defineRequestICMPHeader(struct icmphdr *icmpHeader, u_int16_t sequenceNumbe
 
 void handlePacketOptions(t_packet *packet, const t_args *args)
 {
-    if (args->activatedOptions[TTL] == TRUE)
-            packet->ip_hdr->ttl = args->optionsValue[TTL];
-    if (args->activatedOptions[PACKET_SIZE] == TRUE)
-            packet->ip_hdr->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr) + args->optionsValue[PACKET_SIZE]);
+    packet->ip_hdr->ttl = args->optionsValue[TTL];
+    packet->ip_hdr->tot_len = htons(sizeof(struct iphdr) + sizeof(struct icmphdr) + args->optionsValue[PACKET_SIZE]);
 }
 
 void defineRequestPacket(t_packet *request,
@@ -80,7 +73,7 @@ status comparePackets(struct icmphdr *icmp_reply, struct icmphdr *icmp_request)
 {
     if (icmp_reply == NULL || icmp_request == NULL)
         return FAILURE;
-    if (icmp_reply->un.echo.id != icmp_request->un.echo.id)
+    if (ntohs(icmp_reply->un.echo.id) != ntohs(icmp_request->un.echo.id))
     // Not the same process
         return FAILURE;
     if (ntohs(icmp_reply->un.echo.sequence) != ntohs(icmp_request->un.echo.sequence))
@@ -103,10 +96,14 @@ status getValidPacket(t_packet *reply, t_packet *request)
     int pkg_idx = 0;
     while (comparePackets(reply->icmp_hdr, request->icmp_hdr) != SUCCESS && pkg_idx >= 0 && pkg_idx < BUFFER_SIZE)
     {
-        if (reply->icmp_hdr && reply->icmp_hdr->type)
-            return FAILURE;
         // Loop until we find a valid packet
         pkg_idx = parsePacket(&(reply->buffer[pkg_idx]), &reply->ip_hdr, &reply->icmp_hdr);
+        if (reply->icmp_hdr && reply->icmp_hdr->type)
+        {
+            struct icmphdr *errorPacket = (void *)IPHDR_SHIFT(ICMPHDR_SHIFT(reply->icmp_hdr));
+            if (errorPacket->un.echo.id == request->icmp_hdr->un.echo.id)
+            return FAILURE;
+        }
     }
     // If pkg_idx < 0, it means we didn't find a valid packet
     if (pkg_idx < 0 || pkg_idx >= BUFFER_SIZE)

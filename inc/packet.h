@@ -14,9 +14,8 @@
 #include "args.h"
 
 #define ICMP_CODE 0
-#define BUFFER_SIZE 1024 //-> max buffer size 65 535
+#define BUFFER_SIZE 65535 //-> max buffer size 65 535
 #define IPHDR_LEN 20
-#define DEFAULT_PADDING 56
 
 #define IPHDR_SIZE (sizeof(struct iphdr))
 #define ICMPHDR_SIZE (sizeof(struct icmphdr))

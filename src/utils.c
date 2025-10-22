@@ -1,5 +1,13 @@
 #include "utils.h"
 
+uint64_t get_elapsed_ms(struct timeval start, struct timeval end)
+{
+    long seconds  = end.tv_sec - start.tv_sec;
+    long useconds = end.tv_usec - start.tv_usec;
+
+    return (uint64_t)(seconds * 1000L + useconds / 1000L);
+}
+
 int countDigits(int n)
 {
     int i = 0;
@@ -23,4 +31,13 @@ int defineDecimals(int digits)
 int getDecimalsToPrint(double value)
 {
     return defineDecimals(countDigits(value));
+}
+
+void triggerErrorNoFreeingIf(bool condition, char *msg, char *reason)
+{
+    if (condition)
+    {
+        fprintf(stderr, "%s: %s", msg, reason);
+        exit(EXIT_FAILURE);
+    }
 }

@@ -10,6 +10,27 @@ bool strIsDigit(char *str)
     return TRUE;
 }
 
+void initDefaultOptions(t_args *args)
+{
+    for (size_t optionIdx = 0; optionIdx < VALUED_OPTIONS; optionIdx++)
+    {
+        switch (optionIdx)
+        {
+            case PACKET_SIZE:
+                if (args->activatedOptions[PACKET_SIZE] == FALSE)
+                    args->optionsValue[PACKET_SIZE] = DEFAULT_PADDING;
+                triggerErrorNoFreeingIf(args->optionsValue[PACKET_SIZE] > (BUFFER_SIZE - IPHDR_SIZE - ICMPHDR_SIZE), "Packets above 65535 aren't allowed through Internet Protocol.", "Wrong Packet Value");
+            break;
+            case TTL:
+                if (args->activatedOptions[TTL] == FALSE)
+                    args->optionsValue[TTL] = DEFAULT_TTL;
+            break;
+            default:
+                break;
+        }
+    }
+}
+
 void checkArguments(int argc, char **argv, t_args *args)
 {
     const char *optionsName[] = OPTIONS;
@@ -17,27 +38,24 @@ void checkArguments(int argc, char **argv, t_args *args)
     size_t  param = 0;
     args->domain = argv[ADDRIDX];
     
-    if (argc < 2 )
-    {
-        fprintf(stderr, "Usage: %s <IP address>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
+    triggerErrorNoFreeingIf(argc < 2, "./ft_ping <IP address>\n", "");
     for (size_t i = 1; i < ADDRIDX; i++)
     {
         for (size_t optionIdx = 0; optionIdx < IMPLEMENTED_OPTIONS; optionIdx++)
         {
-            if (strcmp(argv[i], optionsName[optionIdx]))
+            bool cmp =  !strcmp(argv[i], optionsName[optionIdx]);
+            if (cmp == FALSE)
+            {
+                triggerErrorNoFreeingIf(optionIdx + 1 >= IMPLEMENTED_OPTIONS, "ping: invalid argument", argv[i]);
                 continue;
+            }
             args->activatedOptions[optionIdx] = TRUE;
             if(optionIdx >= VALUED_OPTIONS)
                 break;
-            param = atoi(argv[i + 1]);
-            if (!param || strIsDigit(argv[i + 1]) == FALSE || i + 1 >= ADDRIDX) // separate condition
-            {
-                fprintf(stderr, "ping: invalid argument: %s", argv[i + 1]);
-                exit(EXIT_FAILURE);
-            }
+            param = atoi(argv[++i]);
+            triggerErrorNoFreeingIf(!param || strIsDigit(argv[i]) == FALSE || i >= ADDRIDX, "ping: invalid argument", argv[i]);
             args->optionsValue[optionIdx] = param;
+            break;
         }
     }
 }

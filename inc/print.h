@@ -11,9 +11,10 @@
 #include "args.h"
 #include "packet.h"
 
+
 void    printBeginning(t_args *args, int sockfd, struct sockaddr_in *destAddr);
 void    printReplyInfo(const t_packet *packet, const long rtt_microseconds, const t_args *args, char *ipAddr);
-void    printStatistics(t_rtt *rtt, char *domain);
+void  printStatistics(const t_rtt *rtt, const char *domain, const size_t error_cnt, const uint64_t elapsed_time);
 int     printPacketError(t_packet *reply, const int sequenceNumber);
 
 #endif
